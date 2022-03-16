@@ -8,7 +8,7 @@ To use this repository, browse to the folder that corresponds to the template th
 All of the Templates in this directory are set up to work with [AWS Proton Template Sync](https://docs.aws.amazon.com/proton/latest/adminguide/create-template-sync.html). This repository is also a Template Repository. So you can click "Use this template" on the home page of this repo and that will create an identical repo in your account, which you can then use with template sync.
 
 ### Running Terraform Using AWS Proton Self-managed Provisioning
-If you need an example of how to run your Terraform code. Head on over to [this repo](https://github.com/aws-samples/aws-proton-terraform-github-actions-sample) where we offer an example of running Terraform using GitHub Actions.
+If you need an example of how to run your Terraform code, head on over to [this repo](https://github.com/aws-samples/aws-proton-terraform-github-actions-sample) where we offer an example of running Terraform using GitHub Actions.
 
 ## Security
 
