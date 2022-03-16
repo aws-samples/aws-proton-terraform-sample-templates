@@ -1,0 +1,34 @@
+schema:
+  format:
+    openapi: "3.0.0"
+  service_input_type: "LambdaFunctionInput"
+
+  types:
+    LambdaFunctionInput:
+      type: object
+      description: "Input properties for a Secure Lambda function."
+      properties:
+        function_name:
+          type: string
+          description: "The name for the function."
+          minLength: 1
+          maxLength: 50
+        handler:
+          type: string
+          description: "The handler path for the function."
+          minLength: 1
+          maxLength: 100
+        lambda_runtime:
+          type: string
+          description: "The runtime for your Lambda service"
+          enum: ["nodejs12.x", "python3.8", "ruby2.7", "java11", "go1.x", "dotnetcore3.1"]
+        function_s3_bucket:
+          type: string
+          description: "The s3 bucket where the function code is stored"
+          minLength: 1
+          maxLength: 200
+        function_s3_key:
+          type: string
+          description: "The s3 key where the function code is stored"
+          minLength: 1
+          maxLength: 200
