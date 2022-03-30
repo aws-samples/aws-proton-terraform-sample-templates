@@ -2,3 +2,4 @@
 *.DS_Store
 dev.auto.tfvars.json
 dev.variables.tf
+terraform.tfstate
