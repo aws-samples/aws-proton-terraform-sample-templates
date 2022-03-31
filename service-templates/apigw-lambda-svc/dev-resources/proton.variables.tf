@@ -1,24 +1,22 @@
-variable "environment" {
-  type = object({
-    inputs = map(string)
-    name   = string
-  })
-  default = null
+
+variable "service_instances" {
+  type = list(
+    object({
+      name    = string
+      inputs  = map(string)
+      outputs = map(string)
+      environment = object({
+        account_id = string
+        name       = string
+        outputs    = map(string)
+      })
+    })
+  )
 }
 
 variable "service" {
   type = object({
-    inputs = map(string)
-    name   = string
-  })
-  default = null
-}
-
-variable "service_instance" {
-  type = object({
-    inputs      = map(string)
-    environment = map(string)
-    name        = string
+    name = string
   })
   default = null
 }
