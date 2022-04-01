@@ -1,7 +1,3 @@
-locals {
-  account_id = data.aws_caller_identity.current.account_id
-}
-
 resource "aws_s3_bucket" "function_bucket" {
   bucket = "function_bucket"
 }
@@ -16,29 +12,13 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "aes256" {
   }
 }
 
-data "aws_iam_policy_document" "function_bucket_policy_document" {
-  statement {
-    principals {
-      type        = "AWS"
-      identifiers = [for id in split(",", var.pipeline.inputs.environment_account_ids) : "arn:aws:iam::${id}:root"]
-    }
-    actions = [
-      "s3:GetObject"
-    ]
-    resources = [
-      aws_s3_bucket.function_bucket.arn,
-      "${aws_s3_bucket.function_bucket.arn}/*"
-    ]
-  }
-}
-
 resource "aws_s3_bucket_policy" "function_bucket_policy" {
   policy = data.aws_iam_policy_document.function_bucket_policy_document.json
   bucket = aws_s3_bucket.function_bucket.id
 }
 
 resource "aws_codebuild_project" "build_project" {
-  name         = "build_project"
+  name = "build_project"
   #    description   = ""
   #    build_timeout = "5"
   service_role = aws_iam_role.publish_role.arn
@@ -46,11 +26,6 @@ resource "aws_codebuild_project" "build_project" {
   artifacts {
     type = "CODEPIPELINE"
   }
-
-  #  cache {
-  #    type     = "S3"
-  #    location = aws_s3_bucket.example.bucket
-  #  }
 
   environment {
     compute_type                = "BUILD_GENERAL1_SMALL"
@@ -127,10 +102,11 @@ EOF
 }
 
 
-resource "aws_codebuild_project" "deploy_projects" {
-  for_each = toset(var.service_instances)
+resource "aws_codebuild_project" "deploy_project" {
+  for_each = { for instance in var.service_instances : instance.name => instance }
+  #  for_each = toset(var.service_instances)
 
-  name         = "deploy_project_${each.value.name}}"
+  name         = "deploy_project_${index(var.service_instances, each.value)}"
   service_role = aws_iam_role.publish_role.arn
 
   artifacts {
@@ -156,7 +132,7 @@ resource "aws_codebuild_project" "deploy_projects" {
   }
 
   source {
-    type = "CODEPIPELINE"
+    type      = "CODEPIPELINE"
     buildspec = <<EOF
           {
             "version": "0.2",
@@ -179,273 +155,45 @@ EOF
 resource "aws_iam_role" "publish_role" {
   name = "publish_role"
 
-  #todo: rewrite policy in HCL constructs
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "codebuild.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-EOF
-}
-
-data "aws_iam_policy_document" "publish_role_policy" {
-  statement {
-    effect    = "Allow"
-    resources = [
-      "arn:aws:logs:${data.aws_region}:${account_id}:log-group:/aws/codebuild/${aws_codebuild_project.build_project.id}",
-      "arn:aws:logs:${data.aws_region}:${account_id}:log-group:/aws/codebuild/${aws_codebuild_project.build_project.id}*"
+  assume_role_policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "codebuild.amazonaws.com"
+        },
+        "Action" : "sts:AssumeRole"
+      }
     ]
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    resources = [
-      "arn:aws:codebuild:${data.aws_region}:${account_id}:report-group:/${aws_codebuild_project.build_project.id}*",
-    ]
-    actions = [
-      "codebuild:CreateReportGroup",
-      "codebuild:CreateReport",
-      "codebuild:UpdateReport",
-      "codebuild:BatchPutTestCases"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    resources = ["*"]
-    actions   = ["proton:GetService"]
-  }
-  statement {
-    effect    = "Allow"
-    resources = [
-      aws_s3_bucket.function_bucket.arn,
-      "${aws_s3_bucket.function_bucket.arn}/*"
-    ]
-    actions = [
-      "s3:GetObject*",
-      "s3:GetBucket*",
-      "s3:List*",
-      "s3:DeleteObject*",
-      "s3:PutObject*",
-      "s3:Abort*",
-      "s3:CreateMultipartUpload"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    resources = [
-      aws_s3_bucket.pipeline_artifacts_bucket.arn,
-      "${aws_s3_bucket.pipeline_artifacts_bucket.arn}*"
-    ]
-    actions = [
-      "s3:GetObject*",
-      "s3:GetBucket*",
-      "s3:List*",
-      "s3:DeleteObject*",
-      "s3:PutObject*",
-      "s3:Abort*"
-    ]
-  }
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "publish_role_policy_attachment" {
-  policy_arn = data.aws_iam_policy_document.publish_role_policy
+  policy_arn = data.aws_iam_policy_document.publish_role_policy.id
   role       = aws_iam_role.publish_role.name
 }
 
 resource "aws_iam_role" "deployment_role" {
   name = "deployment_role"
 
-  #todo: rewrite policy in HCL constructs
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "codebuild.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-EOF
-}
-
-data "aws_iam_policy_document" "deployment_role_policy" {
-  statement {
-    effect    = "Allow"
-    resources = [
-      "arn:aws:logs:${data.aws_region}:${account_id}:log-group:/aws/codebuild/Deploy/Project*",
-      "arn:aws:logs:${data.aws_region}:${account_id}:log-group:/aws/codebuild/Deploy/Project:*",
+  assume_role_policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "codebuild.amazonaws.com"
+        },
+        "Action" : "sts:AssumeRole"
+      }
     ]
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    resources = [
-      "arn:aws:codebuild:${data.aws_region}:${account_id}:report-group:/Deploy*Project-*",
-    ]
-    actions = [
-      "codebuild:CreateReportGroup",
-      "codebuild:CreateReport",
-      "codebuild:UpdateReport",
-      "codebuild:BatchPutTestCases"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    resources = ["*"]
-    actions   = [
-      "proton:GetServiceInstance",
-      "proton:UpdateServiceInstance"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    resources = [
-      aws_s3_bucket.pipeline_artifacts_bucket.arn,
-      "${aws_s3_bucket.pipeline_artifacts_bucket.arn}/*"
-    ]
-    actions = [
-      "s3:GetObject*",
-      "s3:GetBucket*",
-      "s3:List*"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    resources = [aws_kms_key.pipeline_artifacts_bucket_key.arn]
-    actions   = [
-      "kms:Decrypt",
-      "kms:DescribeKey",
-      "kms:Encrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*"
-    ]
-  }
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "deployment_role_policy_attachment" {
-  policy_arn = data.aws_iam_policy_document.deployment_role_policy
+  policy_arn = data.aws_iam_policy_document.deployment_role_policy.id
   role       = aws_iam_role.deployment_role.name
-}
-
-data "aws_iam_policy_document" "pipeline_artifacts_bucket_key_policy" {
-  statement {
-    effect    = "Allow"
-    resources = ["*"]
-    principals {
-      identifiers = ["arn:aws:iam::${account}:root"]
-      type        = "AWS"
-    }
-    actions = [
-      "kms:Create*",
-      "kms:Describe*",
-      "kms:Enable*",
-      "kms:List*",
-      "kms:Put*",
-      "kms:Update*",
-      "kms:Revoke*",
-      "kms:Disable*",
-      "kms:Get*",
-      "kms:Delete*",
-      "kms:ScheduleKeyDeletion",
-      "kms:CancelKeyDeletion",
-      "kms:GenerateDataKey",
-      "kms:TagResource",
-      "kms:UntagResource"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    resources = ["*"]
-    principals {
-      identifiers = [aws_iam_role.pipeline_role.arn]
-      type        = "AWS"
-    }
-    actions = [
-      "kms:Decrypt",
-      "kms:DescribeKey",
-      "kms:Encrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    resources = ["*"]
-    principals {
-      identifiers = [aws_iam_role.publish_role.arn]
-      type        = "AWS"
-    }
-    actions = [
-      "kms:Decrypt",
-      "kms:DescribeKey",
-      "kms:Encrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*"
-    ]
-  }
-  #  statement {
-  #    effect    = "Allow"
-  #    resources = ["*"]
-  #    principals {
-  #      identifiers = [aws_iam_role.publish_role.arn]
-  #      type        = "AWS"
-  #    }
-  #    actions = [
-  #      "kms:Decrypt",
-  #      "kms:Encrypt",
-  #      "kms:ReEncrypt*",
-  #      "kms:GenerateDataKey*"
-  #    ]
-  #  }
-  #  statement {
-  #    effect    = "Allow"
-  #    resources = ["*"]
-  #    principals {
-  #      #todo -
-  #      identifiers = [aws_iam_role.deployment_role.arn]
-  #      type        = "AWS"
-  #    }
-  #    actions = [
-  #      "kms:Decrypt",
-  #      "kms:DescribeKey"
-  #    ]
-  #  }
-  statement {
-    effect    = "Allow"
-    resources = ["*"]
-    principals {
-      #todo -
-      identifiers = [aws_iam_role.deployment_role.arn]
-      type        = "AWS"
-    }
-    actions = [
-      "kms:DescribeKey",
-      "kms:Decrypt",
-      "kms:Encrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*"
-    ]
-  }
 }
 
 resource "aws_s3_bucket" "pipeline_artifacts_bucket" {
@@ -453,7 +201,7 @@ resource "aws_s3_bucket" "pipeline_artifacts_bucket" {
 }
 
 resource "aws_s3_bucket_public_access_block" "pipeline_artifacts_bucket_access_block" {
-  bucket                  = aws_s3_bucket.pipeline_artifacts_bucket
+  bucket                  = aws_s3_bucket.pipeline_artifacts_bucket.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -465,13 +213,14 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "pipeline_artifact
 
   rule {
     apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
       kms_master_key_id = aws_kms_key.pipeline_artifacts_bucket_key.arn
     }
   }
 }
 
 resource "aws_kms_key" "pipeline_artifacts_bucket_key" {
-  policy = data.aws_iam_policy_document.pipeline_artifacts_bucket_key_policy
+  policy = data.aws_iam_policy_document.pipeline_artifacts_bucket_key_policy.json
 }
 
 resource "aws_kms_alias" "pipeline_artifacts_bucket_key_alias" {
@@ -498,209 +247,130 @@ resource "aws_iam_role" "pipeline_role" {
 EOF
 }
 
-data "aws_iam_policy_document" "pipeline_role_policy" {
-  statement {
-    effect    = "Allow"
-    resources = [
-      aws_s3_bucket.pipeline_artifacts_bucket.arn,
-      "${aws_s3_bucket.pipeline_artifacts_bucket.arn}*"
-    ]
-    actions = [
-      "s3:GetObject*",
-      "s3:GetBucket*",
-      "s3:List*",
-      "s3:DeleteObject*",
-      "s3:PutObject*",
-      "s3:Abort*"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    resources = [aws_kms_key.pipeline_artifacts_bucket_key.arn]
-    actions   = [
-      "kms:Decrypt",
-      "kms:DescribeKey",
-      "kms:Encrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    resources = ["*"]
-    actions   = [
-      "codestar-connections:*"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    # todo -
-    resources = [PipelineBuildCodePipelineActionRole]
-    actions   = [
-      "sts:AssumeRole"
-    ]
-  }
-  statement {
-    effect    = "Allow"
-    # todo -
-    resources = [PipelineDeployCodePipelineActionRole]
-    actions   = [
-      "sts:AssumeRole"
-    ]
-  }
-}
-
 resource "aws_iam_role_policy_attachment" "pipeline_role_policy_attachment" {
-  policy_arn = data.aws_iam_policy_document.pipeline_role_policy
-  role       = aws_iam_role.pipeline_role
+  policy_arn = data.aws_iam_policy_document.pipeline_role_policy.id
+  role       = aws_iam_role.pipeline_role.name
 }
 
-# todo: pipeline
+resource "aws_codepipeline" "pipeline" {
+  name     = "${var.service.name}} Pipeline"
+  role_arn = aws_iam_role.pipeline_role.arn
 
-#resource "aws_iam_role_policy" "example" {
-#  role = aws_iam_role.example.name
-#
-#  policy = <<POLICY
-#{
-#  "Version": "2012-10-17",
-#  "Statement": [
-#    {
-#      "Effect": "Allow",
-#      "Resource": [
-#        "*"
-#      ],
-#      "Action": [
-#        "logs:CreateLogGroup",
-#        "logs:CreateLogStream",
-#        "logs:PutLogEvents"
-#      ]
-#    },
-#    {
-#      "Effect": "Allow",
-#      "Action": [
-#        "ec2:CreateNetworkInterface",
-#        "ec2:DescribeDhcpOptions",
-#        "ec2:DescribeNetworkInterfaces",
-#        "ec2:DeleteNetworkInterface",
-#        "ec2:DescribeSubnets",
-#        "ec2:DescribeSecurityGroups",
-#        "ec2:DescribeVpcs"
-#      ],
-#      "Resource": "*"
-#    },
-#    {
-#      "Effect": "Allow",
-#      "Action": [
-#        "ec2:CreateNetworkInterfacePermission"
-#      ],
-#      "Resource": [
-#        "arn:aws:ec2:us-east-1:123456789012:network-interface/*"
-#      ],
-#      "Condition": {
-#        "StringEquals": {
-#          "ec2:Subnet": [
-#            "${aws_subnet.example1.arn}",
-#            "${aws_subnet.example2.arn}"
-#          ],
-#          "ec2:AuthorizedService": "codebuild.amazonaws.com"
-#        }
-#      }
-#    },
-#    {
-#      "Effect": "Allow",
-#      "Action": [
-#        "s3:*"
-#      ],
-#      "Resource": [
-#        "${aws_s3_bucket.example.arn}",
-#        "${aws_s3_bucket.example.arn}/*"
-#      ]
-#    }
-#  ]
-#}
-#POLICY
-#}
+  stage {
+    name = "Source"
+    action {
+      category  = "Source"
+      name      = "Source"
+      owner     = "AWS"
+      provider  = "CodeStarSourceConnection"
+      version   = "1"
+      run_order = 1
 
-#data "aws_iam_policy_document" "pipeline_artifacts_bucket_key_policy" {
-#  statement {
-#    actions = [
-#      "kms:Create*",
-#      "kms:Describe*",
-#      "kms:Enable*",
-#      "kms:List*",
-#      "kms:Put*",
-#      "kms:Update*",
-#      "kms:Revoke*",
-#      "kms:Disable*",
-#      "kms:Get*",
-#      "kms:Delete*",
-#      "kms:ScheduleKeyDeletion",
-#      "kms:CancelKeyDeletion",
-#      "kms:GenerateDataKey",
-#      "kms:TagResource",
-#      "kms:UntagResource"
-#    ]
-#    resources = ["*"]
-#    principals {
-#      type        = "AWS"
-#      identifiers = ["arn:aws:iam::${local.account_id}:root"]
-#    }
-#  }
-#
-#  statement {
-#    actions = [
-#      "kms:Decrypt",
-#      "kms:DescribeKey",
-#      "kms:Encrypt",
-#      "kms:ReEncrypt*",
-#      "kms:GenerateDataKey*"
-#    ]
-#    resources = ["*"]
-#    principals {
-#      type        = "AWS"
-#      identifiers = [aws]
-#    }
-#  }
-#
-#}
+      configuration = {
+        ConnectionArn : var.service.repository_connection_arn
+        FullRepositoryId : var.service.repository_id
+        BranchName : var.service.branch_name
+      }
+      output_artifacts = ["Artifact_Source_Checkout"]
+    }
+  }
 
-#
-#resource "aws_codebuild_project" "project-with-cache" {
-#  name           = "test-project-cache"
-#  description    = "test_codebuild_project_cache"
-#  build_timeout  = "5"
-#  queued_timeout = "5"
-#
-#  service_role = aws_iam_role.example.arn
-#
-#  artifacts {
-#    type = "NO_ARTIFACTS"
-#  }
-#
-#  cache {
-#    type  = "LOCAL"
-#    modes = ["LOCAL_DOCKER_LAYER_CACHE", "LOCAL_SOURCE_CACHE"]
-#  }
-#
-#  environment {
-#    compute_type                = "BUILD_GENERAL1_SMALL"
-#    image                       = "aws/codebuild/standard:1.0"
-#    type                        = "LINUX_CONTAINER"
-#    image_pull_credentials_type = "CODEBUILD"
-#
-#    environment_variable {
-#      name  = "SOME_KEY1"
-#      value = "SOME_VALUE1"
-#    }
-#  }
-#
-#  source {
-#    type            = "GITHUB"
-#    location        = "https://github.com/mitchellh/packer.git"
-#    git_clone_depth = 1
-#  }
-#
-#  tags = {
-#    Environment = "Test"
-#  }
-#}
+  stage {
+    name = "Build"
+    action {
+      category  = "Build"
+      name      = "Build"
+      owner     = "AWS"
+      provider  = "CodeBuild"
+      version   = "1"
+      run_order = 1
+
+      configuration = {
+        ProjectName = aws_codebuild_project.build_project.name
+      }
+      input_artifacts  = ["Artifact_Source_Checkout"]
+      output_artifacts = ["BuildOutput"]
+      role_arn         = aws_iam_role.pipeline_build_codepipeline_action_role.arn
+    }
+  }
+
+  dynamic "stage" {
+    for_each = toset(var.service_instances)
+
+    content {
+      name = "Deploy${index(var.service_instances, stage.value)}"
+
+      action {
+        category  = "Build"
+        name      = "Deploy"
+        owner     = "AWS"
+        provider  = "CodeBuild"
+        version   = "1"
+        run_order = 1
+
+        configuration = {
+          ProjectName = "Deploy${index(var.service_instances, stage.value)}"
+        }
+        input_artifacts = ["BuildOutput"]
+        role_arn        = aws_iam_role.pipeline_deploy_codepipeline_action_role.arn
+      }
+    }
+  }
+  artifact_store {
+    encryption_key {
+      id   = aws_kms_key.pipeline_artifacts_bucket_key.arn
+      type = "KMS"
+    }
+    location = aws_s3_bucket.pipeline_artifacts_bucket.bucket
+    type     = "S3"
+  }
+  depends_on = [
+    aws_iam_role.pipeline_role,
+    data.aws_iam_policy_document.pipeline_role_policy
+  ]
+
+}
+
+resource "aws_iam_role" "pipeline_build_codepipeline_action_role" {
+  name = "pipeline_build_codepipeline_action_role"
+
+  assume_role_policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${local.account_id}:root"
+        },
+        "Action" : "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "pipeline_build_codepipeline_action_role_attachment" {
+  policy_arn = data.aws_iam_policy_document.pipeline_build_codepipeline_action_role_policy.id
+  role       = aws_iam_role.pipeline_build_codepipeline_action_role.name
+}
+
+resource "aws_iam_role" "pipeline_deploy_codepipeline_action_role" {
+  name = "pipeline_deploy_codepipeline_action_role"
+
+  assume_role_policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${local.account_id}:root"
+        },
+        "Action" : "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "pipeline_deploy_codepipeline_action_role_attachment" {
+  policy_arn = data.aws_iam_policy_document.pipeline_deploy_codepipeline_action_role_policy.id
+  role       = aws_iam_role.pipeline_deploy_codepipeline_action_role.name
+}

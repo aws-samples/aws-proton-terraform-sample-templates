@@ -16,7 +16,10 @@ variable "service_instances" {
 
 variable "service" {
   type = object({
-    name = string
+    name                      = string
+    repository_id             = string
+    repository_connection_arn = string
+    branch_name               = string
   })
   default = null
 }
