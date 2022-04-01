@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "function_bucket" {
-  bucket = "function_bucket"
+  bucket = "function-bucket"
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "aes256" {
@@ -197,7 +197,7 @@ resource "aws_iam_role_policy_attachment" "deployment_role_policy_attachment" {
 }
 
 resource "aws_s3_bucket" "pipeline_artifacts_bucket" {
-  bucket = "pipeline_artifacts_bucket"
+  bucket = "pipeline-artifacts-bucket"
 }
 
 resource "aws_s3_bucket_public_access_block" "pipeline_artifacts_bucket_access_block" {

@@ -9,17 +9,21 @@ terraform {
   backend "s3" {}
 }
 
+#data "aws_region" "current" {}
+
 # Configure the AWS Provider
 provider "aws" {
-  region = var.aws_region
+  region = data.aws_region.current.id
+  alias = "default"
+
   default_tags {
     tags = {
-      "proton:service" = var.service.name
+      "proton:pipeline" = var.service.name
     }
   }
 }
-
-variable "aws_region" {
-  type    = string
-  default = "us-east-1"
-}
+#
+#variable "aws_region" {
+#  type    = string
+#  default = "us-east-1"
+#}
