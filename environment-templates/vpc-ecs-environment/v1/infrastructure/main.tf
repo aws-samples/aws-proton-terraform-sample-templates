@@ -15,13 +15,13 @@ module "vpc" {
   }
 }
 
-module "ecs" {
-  source  = "terraform-aws-modules/ecs/aws"
-  version = "3.4.1"
-  name    = "${var.environment.name}-ECS"
+resource "aws_apprunner_vpc_connector" "connector" {
+  vpc_connector_name = "${var.environment.name}-vpc-connector"
+  subnets            = module.vpc.public_subnets
+  security_groups    = [module.vpc.default_security_group_id]
 }
 
-module "sns" {
-  source  = "terraform-aws-modules/sns/aws"
-  version = "3.3.0"
+resource "aws_sns_topic" "ping_topic" {
+  name_prefix       = "ping-"
+  kms_master_key_id = "alias/aws/sns"
 }
