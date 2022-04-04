@@ -20,7 +20,7 @@ data "aws_iam_policy_document" "function_bucket_policy_document" {
   }
 }
 
-data "aws_iam_policy_document" "publish_role_policy" {
+data "aws_iam_policy_document" "publish_role_policy_document" {
   statement {
     effect = "Allow"
     resources = [

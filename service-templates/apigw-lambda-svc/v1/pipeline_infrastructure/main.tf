@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "function_bucket" {
-  bucket = "function-bucket"
+  bucket_prefix = "function-bucket"
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "aes256" {
@@ -18,9 +18,7 @@ resource "aws_s3_bucket_policy" "function_bucket_policy" {
 }
 
 resource "aws_codebuild_project" "build_project" {
-  name = "build_project"
-  #    description   = ""
-  #    build_timeout = "5"
+  name         = "${var.service.name}-build-project"
   service_role = aws_iam_role.publish_role.arn
 
   artifacts {
@@ -103,10 +101,9 @@ EOF
 
 
 resource "aws_codebuild_project" "deploy_project" {
-  for_each = { for instance in var.service_instances : instance.name => instance }
-  #  for_each = toset(var.service_instances)
+  for_each = {for instance in var.service_instances : instance.name => instance}
 
-  name         = "deploy_project_${index(var.service_instances, each.value)}"
+  name         = "${var.service.name}-deploy-project-${index(var.service_instances, each.value)}"
   service_role = aws_iam_role.publish_role.arn
 
   artifacts {
@@ -153,7 +150,7 @@ EOF
 }
 
 resource "aws_iam_role" "publish_role" {
-  name = "publish_role"
+  name_prefix = "publish-role"
 
   assume_role_policy = jsonencode({
     "Version" : "2012-10-17",
@@ -169,13 +166,17 @@ resource "aws_iam_role" "publish_role" {
   })
 }
 
+resource "aws_iam_policy" "publish_role_policy" {
+  policy = data.aws_iam_policy_document.publish_role_policy_document.json
+}
+
 resource "aws_iam_role_policy_attachment" "publish_role_policy_attachment" {
-  policy_arn = data.aws_iam_policy_document.publish_role_policy.id
+  policy_arn = aws_iam_policy.publish_role_policy.arn
   role       = aws_iam_role.publish_role.name
 }
 
 resource "aws_iam_role" "deployment_role" {
-  name = "deployment_role"
+  name_prefix = "deployment-role"
 
   assume_role_policy = jsonencode({
     "Version" : "2012-10-17",
@@ -191,13 +192,17 @@ resource "aws_iam_role" "deployment_role" {
   })
 }
 
+resource "aws_iam_policy" "deployment_role_policy" {
+  policy = data.aws_iam_policy_document.deployment_role_policy.json
+}
+
 resource "aws_iam_role_policy_attachment" "deployment_role_policy_attachment" {
-  policy_arn = data.aws_iam_policy_document.deployment_role_policy.id
+  policy_arn = aws_iam_policy.deployment_role_policy.arn
   role       = aws_iam_role.deployment_role.name
 }
 
 resource "aws_s3_bucket" "pipeline_artifacts_bucket" {
-  bucket = "pipeline-artifacts-bucket"
+  bucket_prefix = "pipeline-artifacts-bucket"
 }
 
 resource "aws_s3_bucket_public_access_block" "pipeline_artifacts_bucket_access_block" {
@@ -229,7 +234,7 @@ resource "aws_kms_alias" "pipeline_artifacts_bucket_key_alias" {
 }
 
 resource "aws_iam_role" "pipeline_role" {
-  name = "pipeline_role"
+  name_prefix = "pipeline-role"
 
   assume_role_policy = <<EOF
 {
@@ -247,13 +252,17 @@ resource "aws_iam_role" "pipeline_role" {
 EOF
 }
 
+resource "aws_iam_policy" "pipeline_role_policy" {
+  policy = data.aws_iam_policy_document.pipeline_role_policy.json
+}
+
 resource "aws_iam_role_policy_attachment" "pipeline_role_policy_attachment" {
-  policy_arn = data.aws_iam_policy_document.pipeline_role_policy.id
+  policy_arn = aws_iam_policy.pipeline_role_policy.arn
   role       = aws_iam_role.pipeline_role.name
 }
 
 resource "aws_codepipeline" "pipeline" {
-  name     = "${var.service.name}} Pipeline"
+  name     = "${var.service.name}}-pipeline"
   role_arn = aws_iam_role.pipeline_role.arn
 
   stage {
@@ -332,7 +341,7 @@ resource "aws_codepipeline" "pipeline" {
 }
 
 resource "aws_iam_role" "pipeline_build_codepipeline_action_role" {
-  name = "pipeline_build_codepipeline_action_role"
+  name_prefix = "pipeline-build-action-role"
 
   assume_role_policy = jsonencode({
     "Version" : "2012-10-17",
@@ -348,13 +357,17 @@ resource "aws_iam_role" "pipeline_build_codepipeline_action_role" {
   })
 }
 
+resource "aws_iam_policy" "pipeline_build_action_role_policy" {
+  policy = data.aws_iam_policy_document.pipeline_build_codepipeline_action_role_policy.json
+}
+
 resource "aws_iam_role_policy_attachment" "pipeline_build_codepipeline_action_role_attachment" {
-  policy_arn = data.aws_iam_policy_document.pipeline_build_codepipeline_action_role_policy.id
+  policy_arn = aws_iam_policy.pipeline_build_action_role_policy.arn
   role       = aws_iam_role.pipeline_build_codepipeline_action_role.name
 }
 
 resource "aws_iam_role" "pipeline_deploy_codepipeline_action_role" {
-  name = "pipeline_deploy_codepipeline_action_role"
+  name_prefix = "pipeline-deploy-action-role"
 
   assume_role_policy = jsonencode({
     "Version" : "2012-10-17",
@@ -370,7 +383,11 @@ resource "aws_iam_role" "pipeline_deploy_codepipeline_action_role" {
   })
 }
 
+resource "aws_iam_policy" "pipeline_deploy_action_role_policy" {
+  policy = data.aws_iam_policy_document.pipeline_deploy_codepipeline_action_role_policy.json
+}
+
 resource "aws_iam_role_policy_attachment" "pipeline_deploy_codepipeline_action_role_attachment" {
-  policy_arn = data.aws_iam_policy_document.pipeline_deploy_codepipeline_action_role_policy.id
+  policy_arn = aws_iam_policy.pipeline_deploy_action_role_policy.arn
   role       = aws_iam_role.pipeline_deploy_codepipeline_action_role.name
 }
