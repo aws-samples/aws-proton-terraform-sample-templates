@@ -14,12 +14,27 @@ variable "service_instances" {
   )
 }
 
+variable "service_instance" {
+  type = object({
+    name   = string
+    inputs = map(string)
+  })
+  default = null
+}
+
 variable "service" {
   type = object({
     name                      = string
     repository_id             = string
     repository_connection_arn = string
     branch_name               = string
+  })
+  default = null
+}
+
+variable "environment" {
+  type = object({
+    outputs = map(string)
   })
   default = null
 }

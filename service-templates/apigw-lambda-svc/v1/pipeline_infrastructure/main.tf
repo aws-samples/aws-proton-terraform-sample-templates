@@ -236,20 +236,18 @@ resource "aws_kms_alias" "pipeline_artifacts_bucket_key_alias" {
 resource "aws_iam_role" "pipeline_role" {
   name_prefix = "pipeline-role"
 
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "codebuild.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-EOF
+  assume_role_policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "codepipeline.amazonaws.com"
+        },
+        "Action" : "sts:AssumeRole"
+      }
+    ]
+  })
 }
 
 resource "aws_iam_policy" "pipeline_role_policy" {
@@ -262,7 +260,7 @@ resource "aws_iam_role_policy_attachment" "pipeline_role_policy_attachment" {
 }
 
 resource "aws_codepipeline" "pipeline" {
-  name     = "${var.service.name}}-pipeline"
+  name     = "${var.service.name}-pipeline"
   role_arn = aws_iam_role.pipeline_role.arn
 
   stage {

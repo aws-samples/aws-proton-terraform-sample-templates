@@ -32,9 +32,14 @@ schema:
           description: "The runtime for your Lambda service"
           enum: ["nodejs12.x", "python3.8", "ruby2.7", "java11", "go1.x", "dotnetcore3.1"]
           default: "nodejs12.x"
-        code_uri:
+        code_bucket:
           type: string
-          description: "The s3 link to your application"
+          description: "The s3 bucket for your application code"
+          minLength: 1
+          maxLength: 200
+        code_key:
+          type: string
+          description: "The s3 key for your application code"
           minLength: 1
           maxLength: 200
         subnet_type:
