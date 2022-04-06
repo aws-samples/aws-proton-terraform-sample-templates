@@ -4,3 +4,4 @@ dev.auto.tfvars.json
 dev.variables.tf
 terraform.tfstate
 .terraform*
+.idea
