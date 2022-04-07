@@ -1,47 +1,47 @@
-output "fargate_cluster" {
+output "Cluster" {
   value = aws_ecs_cluster.fargate_cluster
 }
 
-output "fargate_cluster_arn" {
+output "ClusterArn" {
   value = aws_ecs_cluster.fargate_cluster.arn
 }
 
-output "ecs_task_execution_role_arn" {
+output "ServiceTaskDefExecutionRoleArn" {
   value = aws_iam_role.ecs_task_execution_role.arn
 }
 
-output "sns_topic" {
+output "SNSTopic" {
   value = aws_sns_topic.ping_topic
 }
 
-output "sns_topic_name" {
+output "SNSTopicName" {
   value = aws_sns_topic.ping_topic.name
 }
 
-output "sns_region" {
+output "SNSRegion" {
   value = local.region
 }
 
-output "vpc_id" {
+output "VPC" {
   value = module.vpc.vpc_id
 }
 
-output "public_subnet_one_id" {
+output "PublicSubnet1" {
   value = module.vpc.public_subnets[0]
 }
 
-output "public_subnet_two_id" {
+output "PublicSubnet2" {
   value = module.vpc.public_subnets[1]
 }
 
-output "private_subnet_one_id" {
+output "PrivateSubnet1" {
   value = module.vpc.private_subnets[0]
 }
 
-output "private_subnet_two_id" {
+output "PrivateSubnet2" {
   value = module.vpc.private_subnets[1]
 }
 
-output "cloud_map_namespace_id" {
+output "CloudMapNamespaceId" {
   value = aws_service_discovery_private_dns_namespace.service_discovery.id
 }
