@@ -33,7 +33,7 @@ resource "aws_codebuild_project" "build_project" {
 
     environment_variable {
       name  = "bucket_name"
-      value = "function_bucket"
+      value = aws_s3_bucket.function_bucket.bucket
     }
 
     environment_variable {
@@ -48,14 +48,14 @@ resource "aws_codebuild_project" "build_project" {
                   "version": "0.2",
                   "phases": {
                     "install": {
-                      "runtime-versions": {{
-                          {"ruby2.7": {"ruby": "2.7"},
-                            "go1.x": {"golang": "1.x"},
-                            "nodejs12.x": {"nodejs": "12.x"},
-                            "python3.8": {"python": "3.8"},
-                            "java11": {"java": "openjdk11.x"},
-                            "dotnetcore3.1": {"dotnet": "3.1"}
-                          }[service_instances[0].outputs.LambdaRuntime] | tojson | safe }},
+                      "runtime-versions":
+                      ${tomap({
+                        "ruby2.7" = jsonencode({"ruby" = "2.7"})
+                        "nodejs12.x" = jsonencode({"nodejs" = "12.x"})
+                        "python3.8" = jsonencode({"python" = "3.8"})
+                        "java11" = jsonencode({"java" = "openjdk11.x"})
+                        "dotnetcore3.1" = jsonencode({"dotnet": "3.1"})
+                      })[var.service_instances[0].outputs.LambdaRuntime]},
                       "commands": [
                         "pip3 install --upgrade --user awscli",
                         "echo 'f6bd1536a743ab170b35c94ed4c7c4479763356bd543af5d391122f4af852460  yq_linux_amd64' > yq_linux_amd64.sha",
@@ -67,27 +67,28 @@ resource "aws_codebuild_project" "build_project" {
                     },
                     "pre_build": {
                       "commands": [
-                        "cd $CODEBUILD_SRC_DIR/{{pipeline.inputs.code_dir}}",
-                        "{{ pipeline.inputs.unit_test_command }}"
+                        "cd $CODEBUILD_SRC_DIR/${var.pipeline.inputs.code_dir}",
+                        "${var.pipeline.inputs.unit_test_command}"
                       ]
                     },
                     "build": {
                       "commands": [
-                        "{{ pipeline.inputs.packaging_command }}",
-                        "FUNCTION_URI=s3://$bucket_name/$CODEBUILD_BUILD_NUMBER/function.zip",
-                        "aws s3 cp function.zip $FUNCTION_URI"
+                        "${var.pipeline.inputs.packaging_command}",
+                        "FUNCTION_KEY=$CODEBUILD_BUILD_NUMBER/function.zip",
+                        "aws s3 cp function.zip s3://$bucket_name/$FUNCTION_KEY"
                       ]
                     },
                     "post_build": {
                       "commands": [
                         "aws proton --region $AWS_DEFAULT_REGION get-service --name $service_name | jq -r .service.spec > service.yaml",
-                        "yq w service.yaml 'instances[*].spec.code_uri' \"$FUNCTION_URI\" > rendered_service.yaml"
+                        "yq w service.yaml 'instances[*].spec.code_bucket' \"$bucket_name\" > rendered_service.yaml",
+                        "yq w service.yaml 'instances[*].spec.code_key' \"$FUNCTION_KEY\" > rendered_service.yaml"
                       ]
                     }
                   },
                   "artifacts": {
                     "files": [
-                      "{{pipeline.inputs.code_dir}}/rendered_service.yaml"
+                      "${var.pipeline.inputs.code_dir}/rendered_service.yaml"
                     ]
                   }
                 }
@@ -103,7 +104,7 @@ EOF
 resource "aws_codebuild_project" "deploy_project" {
   for_each = {for instance in var.service_instances : instance.name => instance}
 
-  name         = "${var.service.name}-deploy-project-${index(var.service_instances, each.value)}"
+  name         = "Deploy${index(var.service_instances, each.value)}Project"
   service_role = aws_iam_role.publish_role.arn
 
   artifacts {
@@ -137,7 +138,7 @@ resource "aws_codebuild_project" "deploy_project" {
               "build": {
                 "commands": [
                   "pip3 install --upgrade --user awscli",
-                  "aws proton --region $AWS_DEFAULT_REGION update-service-instance --deployment-type CURRENT_VERSION --name $service_instance_name --service-name $service_name --spec file://{{pipeline.inputs.code_dir}}/rendered_service.yaml",
+                  "aws proton --region $AWS_DEFAULT_REGION update-service-instance --deployment-type CURRENT_VERSION --name $service_instance_name --service-name $service_name --spec file://${var.pipeline.inputs.code_dir}/rendered_service.yaml",
                   "aws proton --region $AWS_DEFAULT_REGION wait service-instance-deployed --name $service_instance_name --service-name $service_name"
                 ]
               }
@@ -305,18 +306,18 @@ resource "aws_codepipeline" "pipeline" {
     for_each = toset(var.service_instances)
 
     content {
-      name = "Deploy${index(var.service_instances, stage.value)}"
+      name = "Deploy${index(var.service_instances, stage.value)}Project"
 
       action {
         category  = "Build"
-        name      = "Deploy"
+        name      = "Deploy${index(var.service_instances, stage.value)}"
         owner     = "AWS"
         provider  = "CodeBuild"
         version   = "1"
         run_order = 1
 
         configuration = {
-          ProjectName = "Deploy${index(var.service_instances, stage.value)}"
+          ProjectName = "Deploy${index(var.service_instances, stage.value)}Project"
         }
         input_artifacts = ["BuildOutput"]
         role_arn        = aws_iam_role.pipeline_deploy_codepipeline_action_role.arn
