@@ -81,8 +81,8 @@ resource "aws_codebuild_project" "build_project" {
                     "post_build": {
                       "commands": [
                         "aws proton --region $AWS_DEFAULT_REGION get-service --name $service_name | jq -r .service.spec > service.yaml",
-                        "yq w service.yaml 'instances[*].spec.code_bucket' \"$bucket_name\" > rendered_service.yaml",
-                        "yq w service.yaml 'instances[*].spec.code_key' \"$FUNCTION_KEY\" > rendered_service.yaml"
+                        "yq w service.yaml 'instances[*].spec.lambda_bucket' \"$bucket_name\" > rendered_service.yaml",
+                        "yq w service.yaml 'instances[*].spec.lambda_key' \"$FUNCTION_KEY\" > rendered_service.yaml"
                       ]
                     }
                   },
@@ -105,7 +105,7 @@ resource "aws_codebuild_project" "deploy_project" {
   for_each = {for instance in var.service_instances : instance.name => instance}
 
   name         = "Deploy${index(var.service_instances, each.value)}Project"
-  service_role = aws_iam_role.publish_role.arn
+  service_role = aws_iam_role.deployment_role.arn
 
   artifacts {
     type = "CODEPIPELINE"
