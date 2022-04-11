@@ -35,15 +35,6 @@ resource "aws_apprunner_vpc_connector" "connector" {
   security_groups    = [module.vpc.default_security_group_id]
 }
 
-resource "aws_sns_topic" "ping_topic" {
-  name_prefix       = "ping-"
-  kms_master_key_id = "alias/aws/sns"
-}
-
-resource "aws_sns_topic" "ecs_drain_hook_topic" {
-  name_prefix = "ecs_drain_hook-"
-}
-
 resource "aws_ecs_cluster" "cluster" {
   name = "ecs_cluster"
 }
@@ -95,7 +86,6 @@ resource "aws_autoscaling_group" "ecs_autoscaling_group" {
   desired_capacity     = var.environment.inputs.DesiredCapacity
   launch_configuration = aws_launch_configuration.ec2_launch_config.name
   vpc_zone_identifier  = (var.environment.inputs.subnet_type == "private") ? module.vpc.private_subnets : module.vpc.public_subnets
-
 }
 
 resource "aws_autoscaling_lifecycle_hook" "ecs_drain_hook" {
@@ -110,6 +100,15 @@ resource "aws_autoscaling_lifecycle_hook" "ecs_drain_hook" {
     aws_iam_policy.ecs_drain_hook_default_policy,
     aws_iam_role.ecs_drain_hook_role
   ]
+}
+
+resource "aws_sns_topic" "ping_topic" {
+  name_prefix       = "ping-"
+  kms_master_key_id = "alias/aws/sns"
+}
+
+resource "aws_sns_topic" "ecs_drain_hook_topic" {
+  name_prefix = "ecs_drain_hook-"
 }
 
 resource "aws_lambda_function" "ecs_drain_function" {
