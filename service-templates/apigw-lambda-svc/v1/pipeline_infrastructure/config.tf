@@ -9,14 +9,14 @@ terraform {
   backend "s3" {
     region = "us-east-1"
     bucket = "terraform-samples-259837135622-apigw-lambda-svc"
-    key = "pipeline.tfstate"
+    key    = "pipeline.tfstate"
   }
 }
 
 # Configure the AWS Provider
 provider "aws" {
   region = data.aws_region.current.id
-  alias = "default"
+  alias  = "default"
 
   default_tags {
     tags = {
