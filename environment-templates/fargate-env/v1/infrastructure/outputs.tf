@@ -1,5 +1,5 @@
-output "Cluster" {
-  value = aws_ecs_cluster.fargate_cluster
+output "ClusterName" {
+  value = aws_ecs_cluster.fargate_cluster.name
 }
 
 output "ClusterArn" {
@@ -10,8 +10,8 @@ output "ServiceTaskDefExecutionRoleArn" {
   value = aws_iam_role.ecs_task_execution_role.arn
 }
 
-output "SNSTopic" {
-  value = aws_sns_topic.ping_topic
+output "SNSTopicArn" {
+  value = aws_sns_topic.ping_topic.arn
 }
 
 output "SNSTopicName" {
