@@ -3,11 +3,13 @@ module "vpc" {
 
   cidr = var.environment.inputs.vpc_cidr
 
-  azs                = ["${var.aws_region}a"]
-  private_subnets    = [var.environment.inputs.private_subnet_one_cidr, var.environment.inputs.private_subnet_two_cidr]
-  public_subnets     = [var.environment.inputs.public_subnet_one_cidr, var.environment.inputs.public_subnet_two_cidr]
-  enable_nat_gateway = true
-  enable_vpn_gateway = true
+  azs                  = ["${var.aws_region}a"]
+  private_subnets      = [var.environment.inputs.private_subnet_one_cidr, var.environment.inputs.private_subnet_two_cidr]
+  public_subnets       = [var.environment.inputs.public_subnet_one_cidr, var.environment.inputs.public_subnet_two_cidr]
+  enable_nat_gateway   = true
+  enable_vpn_gateway   = true
+  enable_dns_hostnames = true
+  enable_dns_support   = true
 
   tags = {
     Terraform   = "true"
