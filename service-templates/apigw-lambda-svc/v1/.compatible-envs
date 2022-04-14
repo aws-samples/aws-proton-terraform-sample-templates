@@ -1,2 +1,3 @@
 vpc-ecs-environment:1
 fargate-env:1
+fargate_env:1
