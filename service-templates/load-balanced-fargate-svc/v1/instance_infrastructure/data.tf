@@ -21,5 +21,5 @@ data "aws_iam_policy_document" "ecs_task_execution_role_policy" {
     actions = ["sns:Publish"]
     effect  = "Allow"
   }
-  resource = [var.environment.outputs.SNSTopicName]
+  resource = [var.environment.outputs.SnsTopicName]
 }
