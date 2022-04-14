@@ -15,7 +15,7 @@ terraform {
 
 # Configure the AWS Provider
 provider "aws" {
-  region = data.aws_region.current.id
+  region = var.aws_region
   alias  = "default"
 
   default_tags {
