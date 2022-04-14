@@ -144,7 +144,7 @@ EOF
 }
 
 resource "aws_iam_role" "publish_role" {
-  name = "publish_role"
+  name_prefix = "publish_role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -170,7 +170,7 @@ resource "aws_iam_role_policy_attachment" "publish_role_policy_attachment" {
 }
 
 resource "aws_iam_role" "deployment_role" {
-  name = "deploy_role"
+  name_prefix = "deploy_role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -196,7 +196,7 @@ resource "aws_iam_role_policy_attachment" "deployment_role_policy_attachment" {
 }
 
 resource "aws_iam_role" "pipeline_role" {
-  name = "deploy_role"
+  name_prefix = "deploy_role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
