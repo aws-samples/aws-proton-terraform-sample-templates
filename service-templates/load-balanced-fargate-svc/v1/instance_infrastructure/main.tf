@@ -11,19 +11,20 @@ resource "aws_security_group" "lb_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
 
-  egress {
-    description = "Load balancer to target"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-  }
+resource "aws_security_group_rule" "lb_sg_egress" {
+  count             = var.service_instance.inputs.loadbalancer_type == "application" ? 1 : 0
+  description       = "Load balancer to target"
+  type              = "egress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  security_group_id = aws_security_group.service_security_group.id
 }
 
 resource "aws_lb" "service_lb" {
-  name = "${var.service.name}-lb"
-  #  Need some clarification here
-  #  load_balancer_type = var.load_balancer_type == "application" ? application : "network"
+  name               = "${var.service.name}-lb"
   load_balancer_type = var.service_instance.inputs.loadbalancer_type
   security_groups    = var.service_instance.inputs.loadbalancer_type == "application" ? [aws_security_group.lb_sg[0].id] : null
   subnets            = [var.environment.outputs.PublicSubnet1, var.environment.outputs.PublicSubnet2]
@@ -55,11 +56,16 @@ resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
 resource "aws_iam_role" "ecs_task_execution_role" {
   name_prefix        = "service_task_definition_execution_role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_assume_role_policy.json
+}
 
-  inline_policy {
-    name   = "publish_2_sns"
-    policy = data.aws_iam_policy_document.ecs_task_execution_role_policy.json
-  }
+resource "aws_iam_policy" "ecs_task_execution_role_policy" {
+  name   = "publish_2_sns"
+  policy = data.aws_iam_policy_document.ecs_task_execution_role_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "publish_role_policy_attachment" {
+  policy_arn = aws_iam_policy.ecs_task_execution_role_policy.arn
+  role       = aws_iam_role.ecs_task_execution_role.name
 }
 
 resource "aws_ecs_task_definition" "service_task_definition" {
@@ -93,7 +99,7 @@ resource "aws_ecs_task_definition" "service_task_definition" {
           },
           {
             "name": "backend_url",
-            "value": "${var.service_instance.inputs.backend_url}"
+            "value": "${var.service_instance.inputs.backendurl}"
           }
         ]
       }
@@ -161,20 +167,21 @@ resource "aws_security_group" "service_security_group" {
   }
 }
 
-resource "aws_security_group_rule" "service_egress" {
-  type      = "ingress"
-  from_port = 80
-  to_port   = 80
-  protocol  = "tcp"
+resource "aws_security_group_rule" "service_ingress" {
+  description = "Load balancer to target"
+  type        = "ingress"
+  from_port   = 80
+  to_port     = 80
+  protocol    = "tcp"
   #Network Load Balancers do not have associated security groups. See - https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html#target-security-groups
   security_group_id = var.service_instance.inputs.loadbalancer_type == "application" ? aws_security_group.service_security_group.id : null
-  cidr_blocks       = var.service_instance.inputs.loadbalancer_type == "application" ? null : ["0.0.0.0/0"]
+  cidr_blocks       = var.service_instance.inputs.loadbalancer_type != "application" ? ["0.0.0.0/0"] : null
 }
 
 resource "aws_appautoscaling_target" "service_task_count_target" {
   max_capacity       = 10
   min_capacity       = 1
-  resource_id        = "-service/${var.environment.outputs.ClusterName}/${var.service.name}_${var.service_instance.name}"
+  resource_id        = "service/${var.environment.outputs.ClusterName}/${var.service.name}_${var.service_instance.name}"
   role_arn           = "arn:aws:iam::${local.account_id}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"

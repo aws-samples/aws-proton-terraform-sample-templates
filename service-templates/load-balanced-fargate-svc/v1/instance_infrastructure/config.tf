@@ -9,7 +9,7 @@ terraform {
   backend "s3" {
     region = "us-east-1"
     bucket = "terraform-states-858487653465"
-    key    = "fargate-env"
+    key    = "fargate-instance"
   }
 }
 
