@@ -20,6 +20,6 @@ data "aws_iam_policy_document" "ecs_task_execution_role_policy" {
   statement {
     actions = ["sns:Publish"]
     effect  = "Allow"
+    resources = [var.environment.outputs.SnsTopicName]
   }
-  resources = [var.environment.outputs.SnsTopicName]
 }

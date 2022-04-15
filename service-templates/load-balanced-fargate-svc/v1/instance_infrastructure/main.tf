@@ -55,11 +55,16 @@ resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
 resource "aws_iam_role" "ecs_task_execution_role" {
   name_prefix        = "service_task_definition_execution_role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_assume_role_policy.json
+}
 
-  inline_policy {
-    name   = "publish_2_sns"
-    policy = data.aws_iam_policy_document.ecs_task_execution_role_policy.json
-  }
+resource "aws_iam_policy" "ecs_task_execution_role_policy" {
+  name   = "publish_2_sns"
+  policy = data.aws_iam_policy_document.ecs_task_execution_role_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "publish_role_policy_attachment" {
+  policy_arn = aws_iam_policy.ecs_task_execution_role_policy.arn
+  role       = aws_iam_role.ecs_task_execution_role.name
 }
 
 resource "aws_ecs_task_definition" "service_task_definition" {
