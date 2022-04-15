@@ -22,8 +22,6 @@ resource "aws_security_group" "lb_sg" {
 
 resource "aws_lb" "service_lb" {
   name = "${var.service.name}-lb"
-  #  Need some clarification here
-  #  load_balancer_type = var.load_balancer_type == "application" ? application : "network"
   load_balancer_type = var.service_instance.inputs.loadbalancer_type
   security_groups    = var.service_instance.inputs.loadbalancer_type == "application" ? [aws_security_group.lb_sg[0].id] : null
   subnets            = [var.environment.outputs.PublicSubnet1, var.environment.outputs.PublicSubnet2]
@@ -98,7 +96,7 @@ resource "aws_ecs_task_definition" "service_task_definition" {
           },
           {
             "name": "backend_url",
-            "value": "${var.service_instance.inputs.backend_url}"
+            "value": "${var.service_instance.inputs.backendurl}"
           }
         ]
       }
