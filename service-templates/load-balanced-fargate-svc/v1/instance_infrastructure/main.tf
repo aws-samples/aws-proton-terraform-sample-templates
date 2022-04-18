@@ -20,6 +20,7 @@ resource "aws_security_group_rule" "lb_sg_egress" {
   from_port         = 80
   to_port           = 80
   protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.service_security_group.id
 }
 
@@ -37,7 +38,8 @@ resource "aws_lb_listener" "service_lb_public_listener" {
   port              = 80
   protocol          = var.service_instance.inputs.loadbalancer_type == "application" ? "HTTP" : "TCP"
   default_action {
-    type = "forward"
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.service_lb_public_listener_target_group.arn
   }
 }
 
@@ -175,13 +177,13 @@ resource "aws_security_group_rule" "service_ingress" {
   protocol    = "tcp"
   #Network Load Balancers do not have associated security groups. See - https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html#target-security-groups
   security_group_id = var.service_instance.inputs.loadbalancer_type == "application" ? aws_security_group.service_security_group.id : null
-  cidr_blocks       = var.service_instance.inputs.loadbalancer_type != "application" ? ["0.0.0.0/0"] : null
+  cidr_blocks       = ["0.0.0.0/0"]
 }
 
 resource "aws_appautoscaling_target" "service_task_count_target" {
   max_capacity       = 10
   min_capacity       = 1
-  resource_id        = "service/${var.environment.outputs.ClusterName}/${var.service.name}_${var.service_instance.name}"
+  resource_id        = "service/${var.environment.outputs.ClusterName}/${aws_ecs_service.service.name}"
   role_arn           = "arn:aws:iam::${local.account_id}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
