@@ -1,20 +1,27 @@
-resource "aws_s3_bucket" "function_bucket" {
-  bucket_prefix = "function-bucket"
+resource aws_ecr_repository "ecr_repo" {
+  name = "${var.service.name}-repo"
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "aes256" {
-  bucket = aws_s3_bucket.function_bucket.id
+resource aws_ecr_repository_policy "ecr_repo_policy" {
+  repository = aws_ecr_repository.ecr_repo
+  count = var.pipeline.inputs.environment_account_ids != "" ? 1 : 0
+  policy = data.aws_iam_policy_document.ecr_repo_policy_document.json
+}
 
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+data "aws_iam_policy_document" "ecr_repo_policy_document" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [for id in split(",", var.pipeline.inputs.environment_account_ids) : "arn:aws:iam::${id}:root"]
     }
+    actions = [
+      "ecr:GetAuthorizationToken",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchGetImage"
+    ]
   }
-}
-
-resource "aws_s3_bucket_policy" "function_bucket_policy" {
-  policy = data.aws_iam_policy_document.function_bucket_policy_document.json
-  bucket = aws_s3_bucket.function_bucket.id
 }
 
 resource "aws_codebuild_project" "build_project" {
@@ -32,8 +39,8 @@ resource "aws_codebuild_project" "build_project" {
     image_pull_credentials_type = "CODEBUILD"
 
     environment_variable {
-      name  = "bucket_name"
-      value = aws_s3_bucket.function_bucket.bucket
+      name  = "repo_name"
+      value = aws_ecr_repository.ecr_repo.name
     }
 
     environment_variable {
@@ -48,14 +55,9 @@ resource "aws_codebuild_project" "build_project" {
                   "version": "0.2",
                   "phases": {
                     "install": {
-                      "runtime-versions":
-                      ${tomap({
-                          "ruby2.7"       = jsonencode({ "ruby" = "2.7" })
-                          "nodejs12.x"    = jsonencode({ "nodejs" = "12.x" })
-                          "python3.8"     = jsonencode({ "python" = "3.8" })
-                          "java11"        = jsonencode({ "java" = "openjdk11.x" })
-                          "dotnetcore3.1" = jsonencode({ "dotnet" : "3.1" })
-                      })[var.service_instances[0].outputs.LambdaRuntime]},
+                      "runtime-versions": {
+                        "docker": 18
+                      },
                       "commands": [
                         "pip3 install --upgrade --user awscli",
                         "echo 'f6bd1536a743ab170b35c94ed4c7c4479763356bd543af5d391122f4af852460  yq_linux_amd64' > yq_linux_amd64.sha",
@@ -67,39 +69,44 @@ resource "aws_codebuild_project" "build_project" {
                     },
                     "pre_build": {
                       "commands": [
-                        "cd $CODEBUILD_SRC_DIR/${var.pipeline.inputs.code_dir}",
+                        "cd $CODEBUILD_SRC_DIR/${var.pipeline.inputs.service_dir}",
+                        "$(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)",
                         "${var.pipeline.inputs.unit_test_command}"
                       ]
                     },
                     "build": {
                       "commands": [
-                        "${var.pipeline.inputs.packaging_command}",
-                        "FUNCTION_KEY=$CODEBUILD_BUILD_NUMBER/function.zip",
-                        "aws s3 cp function.zip s3://$bucket_name/$FUNCTION_KEY"
+                        "IMAGE_REPO_NAME=$repo_name",
+                        "IMAGE_TAG=$CODEBUILD_BUILD_NUMBER",
+                        "IMAGE_ID=
+              - Ref: AWS::AccountId
+              - >-
+                .dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG",
+                        "docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG -f ${var.pipeline.inputs.docker_file} .",
+                        "docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $IMAGE_ID;",
+                        "docker push $IMAGE_ID"
                       ]
                     },
                     "post_build": {
                       "commands": [
                         "aws proton --region $AWS_DEFAULT_REGION get-service --name $service_name | jq -r .service.spec > service.yaml",
-                        "yq w service.yaml 'instances[*].spec.lambda_bucket' \"$bucket_name\" > rendered_service.yaml",
-                        "yq w service.yaml 'instances[*].spec.lambda_key' \"$FUNCTION_KEY\" > rendered_service.yaml"
+                        "yq w service.yaml 'instances[*].spec.image' \"$IMAGE_ID\" > rendered_service.yaml"
                       ]
                     }
                   },
                   "artifacts": {
                     "files": [
-                      "${var.pipeline.inputs.code_dir}/rendered_service.yaml"
+                      "${var.pipeline.inputs.service_dir}/rendered_service.yaml"
                     ]
                   }
                 }
 EOF
 
-type = "CODEPIPELINE"
-}
+    type = "CODEPIPELINE"
+  }
 
-encryption_key = aws_kms_key.pipeline_artifacts_bucket_key.arn
+  encryption_key = aws_kms_key.pipeline_artifacts_bucket_key.arn
 }
-
 
 resource "aws_codebuild_project" "deploy_project" {
   for_each = { for instance in var.service_instances : instance.name => instance }

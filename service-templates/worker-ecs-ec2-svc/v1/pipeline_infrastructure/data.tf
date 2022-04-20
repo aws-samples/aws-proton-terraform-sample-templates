@@ -4,21 +4,21 @@ data "aws_caller_identity" "current" {}
 
 data "aws_partition" "current" {}
 
-data "aws_iam_policy_document" "function_bucket_policy_document" {
-  statement {
-    principals {
-      type        = "AWS"
-      identifiers = [for id in split(",", var.pipeline.inputs.environment_account_ids) : "arn:aws:iam::${id}:root"]
-    }
-    actions = [
-      "s3:GetObject"
-    ]
-    resources = [
-      aws_s3_bucket.function_bucket.arn,
-      "${aws_s3_bucket.function_bucket.arn}/*"
-    ]
-  }
-}
+#data "aws_iam_policy_document" "function_bucket_policy_document" {
+#  statement {
+#    principals {
+#      type        = "AWS"
+#      identifiers = [for id in split(",", var.pipeline.inputs.environment_account_ids) : "arn:aws:iam::${id}:root"]
+#    }
+#    actions = [
+#      "s3:GetObject"
+#    ]
+#    resources = [
+#      aws_s3_bucket.function_bucket.arn,
+#      "${aws_s3_bucket.function_bucket.arn}/*"
+#    ]
+#  }
+#}
 
 data "aws_iam_policy_document" "publish_role_policy_document" {
   statement {
@@ -48,23 +48,26 @@ data "aws_iam_policy_document" "publish_role_policy_document" {
   statement {
     effect    = "Allow"
     resources = ["*"]
-    actions   = ["proton:GetService"]
+    actions   = ["ecr:GetAuthorizationToken"]
+  }
+  statement {
+    effect    = "Allow"
+    resources = [
+      aws_ecr_repository.ecr_repo.arn
+    ]
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:CompleteLayerUpload",
+      "ecr:GetAuthorizationToken",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart"
+    ]
   }
   statement {
     effect = "Allow"
-    resources = [
-      aws_s3_bucket.function_bucket.arn,
-      "${aws_s3_bucket.function_bucket.arn}/*"
-    ]
-    actions = [
-      "s3:GetObject*",
-      "s3:GetBucket*",
-      "s3:List*",
-      "s3:DeleteObject*",
-      "s3:PutObject*",
-      "s3:Abort*",
-      "s3:CreateMultipartUpload"
-    ]
+    resources = ["*"]
+    actions   = ["proton:GetService"]
   }
   statement {
     effect = "Allow"
