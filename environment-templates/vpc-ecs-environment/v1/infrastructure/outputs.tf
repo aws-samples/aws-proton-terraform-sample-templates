@@ -1,23 +1,31 @@
-output "vpc_id" {
+output "VpcId" {
   value = module.vpc.vpc_id
 }
 
-output "public_subnet_one_id" {
+output "PublicSubnet1" {
   value = module.vpc.public_subnets[0]
 }
 
-output "public_subnet_two_id" {
+output "PublicSubnet2" {
   value = module.vpc.public_subnets[1]
 }
 
-output "private_subnet_one_id" {
+output "PrivateSubnet1" {
   value = module.vpc.private_subnets[0]
 }
 
-output "private_subnet_two_id" {
+output "PrivateSubnet2" {
   value = module.vpc.private_subnets[1]
 }
 
-output "sns_topic_name" {
+output "SnsTopicArn" {
+  value = module.sns.sns_topic_arn
+}
+
+output "SnsTopicName" {
   value = module.sns.sns_topic_name
+}
+
+output "VpcSecurityGroup" {
+  value = module.vpc.default_security_group_id
 }
