@@ -5,6 +5,8 @@ data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
 
 data "aws_iam_policy_document" "function_bucket_policy_document" {
+  count = var.pipeline.inputs.environment_account_ids != ""
+
   statement {
     principals {
       type        = "AWS"
