@@ -3,7 +3,7 @@ module "vpc" {
 
   cidr = var.environment.inputs.vpc_cidr
 
-  azs                  = ["${var.aws_region}a", "${var.aws_region}b"]
+  azs                  = [data.aws_availability_zones.available.names[0], data.aws_availability_zones.available.names[1]]
   private_subnets      = [var.environment.inputs.private_subnet_one_cidr, var.environment.inputs.private_subnet_two_cidr]
   public_subnets       = [var.environment.inputs.public_subnet_one_cidr, var.environment.inputs.public_subnet_two_cidr]
   enable_nat_gateway   = true
@@ -36,6 +36,11 @@ resource "aws_ecs_cluster" "fargate_cluster" {
   default_capacity_provider_strategy {
     capacity_provider = "FARGATE"
   }
+}
+
+resource "aws_sns_topic_policy" "default" {
+  arn    = aws_sns_topic.ping_topic.arn
+  policy = data.aws_iam_policy_document.ping_topic_policy.json
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
