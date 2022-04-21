@@ -9,7 +9,7 @@ terraform {
   backend "s3" {
     bucket = "racicot-arrow-testing"
     region = "us-east-1"
-    key = "ecs-ec2-env.state"
+    key = "scheduled-ecs-ec2-svc.state"
   }
 }
 
