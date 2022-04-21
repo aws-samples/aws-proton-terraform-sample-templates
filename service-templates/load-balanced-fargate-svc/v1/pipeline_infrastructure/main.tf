@@ -148,7 +148,7 @@ resource "aws_iam_role" "publish_role" {
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    statement = [
+    Statement = [
       {
         Effect = "Allow"
         Action = "sts:AssumeRole"
@@ -174,7 +174,7 @@ resource "aws_iam_role" "deployment_role" {
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    statement = [
+    Statement = [
       {
         Effect = "Allow"
         Action = "sts:AssumeRole"
@@ -200,7 +200,7 @@ resource "aws_iam_role" "pipeline_role" {
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    statement = [
+    Statement = [
       {
         Effect = "Allow"
         Action = "sts:AssumeRole"
