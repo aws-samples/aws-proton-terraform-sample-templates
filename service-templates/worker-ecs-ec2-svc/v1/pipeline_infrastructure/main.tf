@@ -3,8 +3,8 @@ resource aws_ecr_repository "ecr_repo" {
 }
 
 resource aws_ecr_repository_policy "ecr_repo_policy" {
-  repository = aws_ecr_repository.ecr_repo
   count = var.pipeline.inputs.environment_account_ids != "" ? 1 : 0
+  repository = aws_ecr_repository.ecr_repo
   policy = data.aws_iam_policy_document.ecr_repo_policy_document.json
 }
 

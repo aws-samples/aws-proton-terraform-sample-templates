@@ -13,6 +13,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "aes256" {
 }
 
 resource "aws_s3_bucket_policy" "function_bucket_policy" {
+  count = var.pipeline.inputs.environment_account_ids != "" ? 1 : 0
   policy = data.aws_iam_policy_document.function_bucket_policy_document.json
   bucket = aws_s3_bucket.function_bucket.id
 }
