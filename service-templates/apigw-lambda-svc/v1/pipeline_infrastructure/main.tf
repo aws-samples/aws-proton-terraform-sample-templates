@@ -50,12 +50,12 @@ resource "aws_codebuild_project" "build_project" {
                     "install": {
                       "runtime-versions":
                       ${tomap({
-                          "ruby2.7"       = jsonencode({ "ruby" = "2.7" })
-                          "nodejs12.x"    = jsonencode({ "nodejs" = "12.x" })
-                          "python3.8"     = jsonencode({ "python" = "3.8" })
-                          "java11"        = jsonencode({ "java" = "openjdk11.x" })
-                          "dotnetcore3.1" = jsonencode({ "dotnet" : "3.1" })
-                      })[var.service_instances[0].outputs.LambdaRuntime]},
+    "ruby2.7"       = jsonencode({ "ruby" = "2.7" })
+    "nodejs12.x"    = jsonencode({ "nodejs" = "12.x" })
+    "python3.8"     = jsonencode({ "python" = "3.8" })
+    "java11"        = jsonencode({ "java" = "openjdk11.x" })
+    "dotnetcore3.1" = jsonencode({ "dotnet" : "3.1" })
+})[var.service_instances[0].outputs.LambdaRuntime]},
                       "commands": [
                         "pip3 install --upgrade --user awscli",
                         "echo 'f6bd1536a743ab170b35c94ed4c7c4479763356bd543af5d391122f4af852460  yq_linux_amd64' > yq_linux_amd64.sha",
