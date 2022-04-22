@@ -269,7 +269,7 @@ resource "aws_codepipeline" "pipeline" {
     name = "Source"
     action {
       category  = "Source"
-      name      = "Source"
+      name      = "Checkout"
       owner     = "AWS"
       provider  = "CodeStarSourceConnection"
       version   = "1"
