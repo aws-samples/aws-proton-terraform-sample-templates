@@ -35,6 +35,11 @@ resource "aws_apprunner_vpc_connector" "connector" {
   security_groups    = [module.vpc.default_security_group_id]
 }
 
+resource "aws_service_discovery_private_dns_namespace" "cloud_map_namespace" {
+  name = "${var.environment.name}.local"
+  vpc  = aws_vpc_endpoint.ec2.vpc_id
+}
+
 resource "aws_ecs_cluster" "cluster" {
   name = "ecs_cluster"
 }

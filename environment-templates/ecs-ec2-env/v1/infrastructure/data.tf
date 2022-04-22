@@ -153,6 +153,24 @@ resource "aws_iam_policy" "ecs_drain_hook_function_service_role_default_policy" 
   name   = "ecs_drain_hook_function_service_role_default_policy"
 }
 
+resource "aws_iam_role" "service-task-def-execution-role" {
+  assume_role_policy  = jsonencode({
+    Version   = "2012-10-17"
+    Statement = [
+      {
+        Action    = "sts:AssumeRole"
+        Effect    = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+  managed_policy_arns = [
+    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+  ]
+}
+
 resource "aws_iam_role_policy_attachment" "ecs_drain_hook_function_service_role_default_policy" {
   role       = aws_iam_role.ecs_drain_hook_function_service_role.name
   policy_arn = aws_iam_policy.ecs_drain_hook_function_service_role_default_policy.arn

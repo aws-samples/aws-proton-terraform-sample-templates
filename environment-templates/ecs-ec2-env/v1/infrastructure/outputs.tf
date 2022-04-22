@@ -1,35 +1,51 @@
-output "vpc_id" {
-  value = module.vpc.vpc_id
+output "Cluster" {
+  value = aws_ecs_cluster.cluster.name
 }
 
-output "public_subnet_one_id" {
-  value = module.vpc.public_subnets[0]
+output "ClusterArn" {
+  value = aws_ecs_cluster.cluster.arn
 }
 
-output "public_subnet_two_id" {
-  value = module.vpc.public_subnets[1]
+output "ServiceTaskDefExecutionRole" {
+  value = aws_iam_role.service-task-def-execution-role.arn
 }
 
-output "private_subnet_one_id" {
-  value = module.vpc.private_subnets[0]
+output "SNSTopic" {
+  value = aws_sns_topic.ping_topic.arn
 }
 
-output "private_subnet_two_id" {
-  value = module.vpc.private_subnets[1]
-}
-
-output "vpc_default_security_group" {
-  value = module.vpc.default_security_group_id
-}
-
-output "vpc_connector_arn" {
-  value = aws_apprunner_vpc_connector.connector.id
-}
-
-output "sns_topic_name" {
+output "SNSTopicName" {
   value = aws_sns_topic.ping_topic.name
 }
 
-output "sns_region" {
+output "SNSRegion" {
   value = local.region
+}
+
+output "VPC" {
+  value = module.vpc.vpc_id
+}
+
+output "PublicSubnet1" {
+  value = module.vpc.public_subnets[0]
+}
+
+output "PublicSubnet2" {
+  value = module.vpc.public_subnets[1]
+}
+
+output "PrivateSubnet1" {
+  value = module.vpc.private_subnets[0]
+}
+
+output "PrivateSubnet2" {
+  value = module.vpc.private_subnets[1]
+}
+
+output "CloudMapNamespaceId" {
+  value = aws_service_discovery_private_dns_namespace.cloud_map_namespace.id
+}
+
+output "ECSHostSecurityGroup" {
+  value = aws_security_group.ecs_host_security_group.arn
 }
