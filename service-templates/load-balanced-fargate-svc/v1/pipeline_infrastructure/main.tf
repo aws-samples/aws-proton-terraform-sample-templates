@@ -64,8 +64,7 @@ resource "aws_codebuild_project" "build_project" {
                       "commands": [
                         "IMAGE_REPO_NAME=$repo_name",
                         "IMAGE_TAG=$CODEBUILD_BUILD_NUMBER",
-                        "IMAGE_ID="${local.account_id}
-                .dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG",
+                        "IMAGE_ID="${local.account_id}.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG",
                         "docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG -f ${var.pipeline.inputs.dockerfile} .",
                         "docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $IMAGE_ID;",
                         "docker push $IMAGE_ID"
