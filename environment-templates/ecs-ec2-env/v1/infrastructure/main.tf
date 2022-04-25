@@ -3,7 +3,7 @@ module "vpc" {
 
   cidr = var.environment.inputs.vpc_cidr
 
-  azs = ["${var.aws_region}a", "${var.aws_region}b"]
+  azs = [data.aws_availability_zones.available.names[0], data.aws_availability_zones.available.names[1]]
   private_subnets = [
     var.environment.inputs.private_subnet_one_cidr,
     var.environment.inputs.private_subnet_two_cidr
