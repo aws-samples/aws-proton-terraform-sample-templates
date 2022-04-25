@@ -2,7 +2,7 @@ resource "aws_security_group" "lb_sg" {
   count       = var.service_instance.inputs.loadbalancer_type == "application" ? 1 : 0
   name        = "service_lb_security_group"
   description = "Automatically created Security Group for Application LB."
-  vpc_id      = var.environment.outputs.Vpc
+  vpc_id      = var.environment.outputs.VpcId
 
   ingress {
     description = "Allow from anyone on port 80"
@@ -52,7 +52,7 @@ resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
     type    = "lb_cookie"
   }
   target_type = "ip"
-  vpc_id      = var.environment.outputs.Vpc
+  vpc_id      = var.environment.outputs.VpcId
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
@@ -158,7 +158,7 @@ resource "aws_service_discovery_service" "service_cloud_map_service" {
 resource "aws_security_group" "service_security_group" {
   name        = "service_security_group"
   description = "Automatically created Security Group for the Service"
-  vpc_id      = var.environment.outputs.Vpc
+  vpc_id      = var.environment.outputs.VpcId
 
   egress {
     description = "Allow all outbound traffic by default"
