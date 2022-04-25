@@ -1,1 +1,0 @@
-../../dev-resources/proton.variables.tf
