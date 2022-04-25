@@ -4,57 +4,57 @@ data "aws_caller_identity" "current" {}
 
 data "aws_partition" "current" {}
 
-data "aws_iam_policy_document" "pull_only_policy" {
+#data "aws_iam_policy_document" "function_bucket_policy_document" {
+#  statement {
+#    principals {
+#      type        = "AWS"
+#      identifiers = [for id in split(",", var.pipeline.inputs.environment_account_ids) : "arn:aws:iam::${id}:root"]
+#    }
+#    actions = [
+#      "s3:GetObject"
+#    ]
+#    resources = [
+#      aws_s3_bucket.function_bucket.arn,
+#      "${aws_s3_bucket.function_bucket.arn}/*"
+#    ]
+#  }
+#}
+
+data "aws_iam_policy_document" "publish_role_policy_document" {
   statement {
-    sid    = "AllowPull"
-    effect = "Allow"
-
-    principals {
-      type        = "AWS"
-      identifiers = formatlist("arn:aws:iam::%s:root", local.environment_account_ids)
-    }
-
-    actions = [
-      "ecr:GetAuthorizationToken",
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:BatchGetImage"
-    ]
-  }
-}
-
-data "aws_iam_policy_document" "publish_role_default_policy" {
-  statement {
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
-    ]
     effect = "Allow"
     resources = [
       "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/codebuild/${aws_codebuild_project.build_project.name}",
       "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/codebuild/${aws_codebuild_project.build_project.name}*"
     ]
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
   }
   statement {
+    effect = "Allow"
+    resources = [
+      "arn:aws:codebuild:${local.region}:${local.account_id}:report-group:/${aws_codebuild_project.build_project.name}*",
+    ]
     actions = [
       "codebuild:CreateReportGroup",
       "codebuild:CreateReport",
       "codebuild:UpdateReport",
       "codebuild:BatchPutTestCases"
     ]
-    effect = "Allow"
-    resources = [
-      "arn:aws:codebuild:${local.region}:${local.account_id}:report-group:/${aws_codebuild_project.build_project.name}*",
-    ]
   }
   statement {
-    actions   = ["ecr:GetAuthorizationToken"]
     effect    = "Allow"
     resources = ["*"]
+    actions   = ["ecr:GetAuthorizationToken"]
   }
-
   statement {
+    effect = "Allow"
+    resources = [
+      aws_ecr_repository.ecr_repo.arn
+    ]
     actions = [
       "ecr:BatchCheckLayerAvailability",
       "ecr:CompleteLayerUpload",
@@ -63,17 +63,18 @@ data "aws_iam_policy_document" "publish_role_default_policy" {
       "ecr:PutImage",
       "ecr:UploadLayerPart"
     ]
-    effect    = "Allow"
-    resources = [aws_ecr_repository.ecr_repo.arn]
   }
-
   statement {
-    actions   = ["proton:GetService"]
     effect    = "Allow"
     resources = ["*"]
+    actions   = ["proton:GetService"]
   }
-
   statement {
+    effect = "Allow"
+    resources = [
+      aws_s3_bucket.pipeline_artifacts_bucket.arn,
+      "${aws_s3_bucket.pipeline_artifacts_bucket.arn}*"
+    ]
     actions = [
       "s3:GetObject*",
       "s3:GetBucket*",
@@ -82,14 +83,10 @@ data "aws_iam_policy_document" "publish_role_default_policy" {
       "s3:PutObject*",
       "s3:Abort*"
     ]
-    effect = "Allow"
-    resources = [
-      aws_s3_bucket.pipeline_artifacts_bucket.arn,
-      "${aws_s3_bucket.pipeline_artifacts_bucket.arn}*"
-    ]
   }
-
   statement {
+    effect    = "Allow"
+    resources = [aws_kms_key.pipeline_artifacts_bucket_key.arn]
     actions = [
       "kms:Decrypt",
       "kms:DescribeKey",
@@ -97,57 +94,57 @@ data "aws_iam_policy_document" "publish_role_default_policy" {
       "kms:ReEncrypt*",
       "kms:GenerateDataKey*"
     ]
-    effect    = "Allow"
-    resources = [aws_kms_key.pipeline_artifacts_bucket_encryption_key.arn]
   }
 }
 
-data "aws_iam_policy_document" "deployment_role_default_policy" {
+data "aws_iam_policy_document" "deployment_role_policy" {
   statement {
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
-    ]
     effect = "Allow"
     resources = [
       "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/codebuild/Deploy*Project*",
       "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/codebuild/Deploy*Project:*",
     ]
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
   }
   statement {
+    effect = "Allow"
+    resources = [
+      "arn:aws:codebuild:${local.region}:${local.account_id}:report-group:/Deploy*Project-*",
+    ]
     actions = [
       "codebuild:CreateReportGroup",
       "codebuild:CreateReport",
       "codebuild:UpdateReport",
       "codebuild:BatchPutTestCases"
     ]
-    effect = "Allow"
-    resources = [
-      "arn:aws:codebuild:${local.region}:${local.account_id}:report-group:/Deploy*Project-*",
-    ]
   }
   statement {
+    effect    = "Allow"
+    resources = ["*"]
     actions = [
       "proton:GetServiceInstance",
       "proton:UpdateServiceInstance"
     ]
-    effect    = "Allow"
-    resources = ["*"]
   }
   statement {
+    effect = "Allow"
+    resources = [
+      aws_s3_bucket.pipeline_artifacts_bucket.arn,
+      "${aws_s3_bucket.pipeline_artifacts_bucket.arn}/*"
+    ]
     actions = [
       "s3:GetObject*",
       "s3:GetBucket*",
       "s3:List*"
     ]
-    effect = "Allow"
-    resources = [
-      aws_s3_bucket.pipeline_artifacts_bucket.arn,
-      "${aws_s3_bucket.pipeline_artifacts_bucket.arn}/*"
-    ]
   }
   statement {
+    effect    = "Allow"
+    resources = [aws_kms_key.pipeline_artifacts_bucket_key.arn]
     actions = [
       "kms:Decrypt",
       "kms:DescribeKey",
@@ -155,61 +152,17 @@ data "aws_iam_policy_document" "deployment_role_default_policy" {
       "kms:ReEncrypt*",
       "kms:GenerateDataKey*"
     ]
-    effect    = "Allow"
-    resources = [aws_kms_key.pipeline_artifacts_bucket_encryption_key.arn]
-  }
-}
-
-data "aws_iam_policy_document" "pipeline_role_default_policy" {
-  statement {
-    actions = [
-      "s3:GetObject*",
-      "s3:GetBucket*",
-      "s3:List*",
-      "s3:DeleteObject*",
-      "s3:PutObject*",
-      "s3:Abort*"
-    ]
-    effect = "Allow"
-    resources = [
-      aws_s3_bucket.pipeline_artifacts_bucket.arn,
-      "${aws_s3_bucket.pipeline_artifacts_bucket.arn}/*"
-    ]
-  }
-
-  statement {
-    actions = [
-      "kms:Decrypt",
-      "kms:DescribeKey",
-      "kms:Encrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*"
-    ]
-    effect    = "Allow"
-    resources = [aws_kms_key.pipeline_artifacts_bucket_encryption_key.arn]
-  }
-
-  statement {
-    actions   = ["codestar-connections:*"]
-    effect    = "Allow"
-    resources = ["*"]
-  }
-
-  statement {
-    actions   = ["sts:AssumeRole"]
-    effect    = "Allow"
-    resources = [aws_iam_role.pipeline_build_codepipeline_action_role.arn]
-  }
-
-  statement {
-    actions   = ["sts:AssumeRole"]
-    effect    = "Allow"
-    resources = [aws_iam_role.pipeline_deploy_codepipeline_action_role.arn]
   }
 }
 
 data "aws_iam_policy_document" "pipeline_artifacts_bucket_key_policy" {
   statement {
+    effect    = "Allow"
+    resources = ["*"]
+    principals {
+      identifiers = ["arn:aws:iam::${local.account_id}:root"]
+      type        = "AWS"
+    }
     actions = [
       "kms:Create*",
       "kms:Describe*",
@@ -227,31 +180,15 @@ data "aws_iam_policy_document" "pipeline_artifacts_bucket_key_policy" {
       "kms:TagResource",
       "kms:UntagResource"
     ]
-    effect = "Allow"
-    principals {
-      identifiers = ["arn:aws:iam::${local.account_id}:root"]
-      type        = "AWS"
-    }
-    resources = ["*"]
   }
 
   statement {
-    actions = [
-      "kms:Decrypt",
-      "kms:DescribeKey",
-      "kms:Encrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*"
-    ]
-    effect = "Allow"
+    effect    = "Allow"
+    resources = ["*"]
     principals {
       identifiers = [aws_iam_role.pipeline_role.arn]
       type        = "AWS"
     }
-    resources = ["*"]
-  }
-
-  statement {
     actions = [
       "kms:Decrypt",
       "kms:DescribeKey",
@@ -259,30 +196,15 @@ data "aws_iam_policy_document" "pipeline_artifacts_bucket_key_policy" {
       "kms:ReEncrypt*",
       "kms:GenerateDataKey*"
     ]
-    effect = "Allow"
+  }
+
+  statement {
+    effect    = "Allow"
+    resources = ["*"]
     principals {
       identifiers = [aws_iam_role.publish_role.arn]
       type        = "AWS"
     }
-    resources = ["*"]
-  }
-
-  statement {
-    actions = [
-      "kms:Decrypt",
-      "kms:Encrypt",
-      "kms:ReEncrypt*",
-      "kms:GenerateDataKey*"
-    ]
-    effect    = "Allow"
-    resources = ["*"]
-    principals {
-      identifiers = [aws_iam_role.deployment_role.arn]
-      type        = "AWS"
-    }
-  }
-
-  statement {
     actions = [
       "kms:Decrypt",
       "kms:DescribeKey",
@@ -290,35 +212,99 @@ data "aws_iam_policy_document" "pipeline_artifacts_bucket_key_policy" {
       "kms:ReEncrypt*",
       "kms:GenerateDataKey*"
     ]
+  }
+
+  statement {
     effect    = "Allow"
     resources = ["*"]
     principals {
       identifiers = [aws_iam_role.deployment_role.arn]
       type        = "AWS"
     }
+    actions = [
+      "kms:DescribeKey",
+      "kms:Decrypt",
+      "kms:Encrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*"
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "pipeline_role_policy" {
+  statement {
+    effect = "Allow"
+    resources = [
+      aws_s3_bucket.pipeline_artifacts_bucket.arn,
+      "${aws_s3_bucket.pipeline_artifacts_bucket.arn}*"
+    ]
+    actions = [
+      "s3:GetObject*",
+      "s3:GetBucket*",
+      "s3:List*",
+      "s3:DeleteObject*",
+      "s3:PutObject*",
+      "s3:Abort*"
+    ]
+  }
+
+  statement {
+    effect    = "Allow"
+    resources = [aws_kms_key.pipeline_artifacts_bucket_key.arn]
+    actions = [
+      "kms:Decrypt",
+      "kms:DescribeKey",
+      "kms:Encrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*"
+    ]
+  }
+
+  statement {
+    effect    = "Allow"
+    resources = ["*"]
+    actions = [
+      "codestar-connections:*"
+    ]
+  }
+
+  statement {
+    effect    = "Allow"
+    resources = [aws_iam_role.pipeline_build_codepipeline_action_role.arn]
+    actions = [
+      "sts:AssumeRole"
+    ]
+  }
+
+  statement {
+    effect    = "Allow"
+    resources = [aws_iam_role.pipeline_deploy_codepipeline_action_role.arn]
+    actions = [
+      "sts:AssumeRole"
+    ]
   }
 }
 
 data "aws_iam_policy_document" "pipeline_build_codepipeline_action_role_policy" {
   statement {
+    effect    = "Allow"
+    resources = [aws_codebuild_project.build_project.arn]
     actions = [
       "codebuild:BatchGetBuilds",
       "codebuild:StartBuild",
       "codebuild:StopBuild"
     ]
-    effect    = "Allow"
-    resources = [aws_codebuild_project.build_project.arn]
   }
 }
 
 data "aws_iam_policy_document" "pipeline_deploy_codepipeline_action_role_policy" {
   statement {
+    effect    = "Allow"
+    resources = ["arn:aws:codebuild:${local.region}:${local.account_id}:project/Deploy*", ]
     actions = [
       "codebuild:BatchGetBuilds",
       "codebuild:StartBuild",
       "codebuild:StopBuild"
     ]
-    effect    = "Allow"
-    resources = ["arn:aws:codebuild:${local.region}:${local.account_id}:project/Deploy*", ]
   }
 }
