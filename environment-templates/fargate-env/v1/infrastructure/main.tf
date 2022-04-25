@@ -30,9 +30,13 @@ resource "aws_sns_topic" "ping_topic" {
 
 resource "aws_ecs_cluster" "fargate_cluster" {
   name = "${var.environment.name}-Cluster"
-  capacity_providers = [
-    "FARGATE"
-  ]
+}
+
+resource "aws_ecs_cluster_capacity_providers" "fargate_cluster_capacity_providers" {
+  cluster_name = aws_ecs_cluster.fargate_cluster.name
+
+  capacity_providers = ["FARGATE"]
+
   default_capacity_provider_strategy {
     capacity_provider = "FARGATE"
   }

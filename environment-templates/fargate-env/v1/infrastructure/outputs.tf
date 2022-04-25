@@ -22,7 +22,7 @@ output "SnsRegion" {
   value = local.region
 }
 
-output "Vpc" {
+output "VpcId" {
   value = module.vpc.vpc_id
 }
 
