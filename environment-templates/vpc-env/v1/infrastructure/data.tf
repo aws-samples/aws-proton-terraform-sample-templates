@@ -4,6 +4,10 @@ data "aws_caller_identity" "current" {}
 
 data "aws_partition" "current" {}
 
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 resource "aws_sns_topic_policy" "default" {
   arn = aws_sns_topic.ping_topic.arn
 
