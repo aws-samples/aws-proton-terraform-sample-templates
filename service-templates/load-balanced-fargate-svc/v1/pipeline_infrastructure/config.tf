@@ -6,15 +6,21 @@ terraform {
     }
   }
 
-  backend "s3" {}
+  backend "s3" {
+    region = "ap-northeast-1"
+    bucket = "terraform-samples-259837135622-worker-ecs-ec2-svc"
+    key    = "pipeline.tfstate"
+  }
 }
 
 # Configure the AWS Provider
 provider "aws" {
   region = var.aws_region
+  alias  = "default"
+
   default_tags {
     tags = {
-      "proton:pipeline" : var.service.name
+      "proton:pipeline" = var.service.name
     }
   }
 }
