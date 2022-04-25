@@ -3,8 +3,8 @@ module "vpc" {
 
   cidr = var.environment.inputs.vpc_cidr
 
-  azs                  = ["${var.aws_region}a", "${var.aws_region}b"]
-  private_subnets      = [
+  azs = ["${var.aws_region}a", "${var.aws_region}b"]
+  private_subnets = [
     var.environment.inputs.private_subnet_one_cidr,
     var.environment.inputs.private_subnet_two_cidr
   ]
@@ -66,12 +66,12 @@ resource "aws_launch_configuration" "ec2_launch_config" {
   image_id             = data.aws_ssm_parameter.ecs_ami.value
   instance_type        = var.environment.inputs.InstanceType
   iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.arn
-  security_groups      = [
+  security_groups = [
     aws_security_group.ecs_host_security_group.id,
     module.vpc.default_security_group_id
   ]
-  user_data            = base64encode(
-  <<-EOT
+  user_data = base64encode(
+    <<-EOT
   #!/bin/bash
   echo ECS_CLUSTER=${aws_ecs_cluster.cluster.name} >> /etc/ecs/ecs.config
   sudo iptables --insert FORWARD 1 --in-interface docker+ --destination 169.254.169.254/32 --jump DROP
@@ -79,7 +79,7 @@ resource "aws_launch_configuration" "ec2_launch_config" {
   echo ECS_AWSVPC_BLOCK_IMDS=true >> /etc/ecs/ecs.config"
 EOT
   )
-  depends_on           = [
+  depends_on = [
     aws_iam_policy.ecs_drain_hook_default_policy,
     aws_iam_role.ecs_host_instance_role
   ]
@@ -101,7 +101,7 @@ resource "aws_autoscaling_lifecycle_hook" "ecs_drain_hook" {
   heartbeat_timeout       = 300
   notification_target_arn = aws_sns_topic.ecs_drain_hook_topic.arn
   role_arn                = aws_iam_role.ecs_drain_hook_role.arn
-  depends_on              = [
+  depends_on = [
     aws_iam_policy.ecs_drain_hook_default_policy,
     aws_iam_role.ecs_drain_hook_role
   ]

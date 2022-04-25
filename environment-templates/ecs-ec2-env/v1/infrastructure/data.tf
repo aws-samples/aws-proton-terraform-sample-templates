@@ -46,11 +46,11 @@ resource "aws_lambda_permission" "ecs_drain_hook_function_allow_invoke_ecs_drain
 
 resource "aws_iam_policy" "ecs_drain_hook_default_policy" {
   name_prefix = "ecs-drain-hook-default-"
-  policy      = jsonencode({
-    Version   = "2012-10-17"
+  policy = jsonencode({
+    Version = "2012-10-17"
     Statement = [
       {
-        Action   = [
+        Action = [
           "sns:Publish",
         ]
         Effect   = "Allow"
@@ -61,13 +61,13 @@ resource "aws_iam_policy" "ecs_drain_hook_default_policy" {
 }
 
 resource "aws_iam_role" "ecs_drain_hook_role" {
-  name_prefix        = "ecs-drain-hook-role"
+  name_prefix = "ecs-drain-hook-role"
   assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
+    Version = "2012-10-17"
     Statement = [
       {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           Service = "autoscaling.amazonaws.com"
         }
@@ -77,13 +77,13 @@ resource "aws_iam_role" "ecs_drain_hook_role" {
 }
 
 resource "aws_iam_role" "ecs_host_instance_role" {
-  name_prefix        = "ecs-host-instance-role-"
+  name_prefix = "ecs-host-instance-role-"
   assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
+    Version = "2012-10-17"
     Statement = [
       {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           Service = "ec2.${local.partition_url_suffix}"
         }
@@ -93,13 +93,13 @@ resource "aws_iam_role" "ecs_host_instance_role" {
 }
 
 resource "aws_iam_role" "ecs_drain_hook_function_service_role" {
-  name_prefix         = "ecs-drain-hook-service-role-"
-  assume_role_policy  = jsonencode({
-    Version   = "2012-10-17"
+  name_prefix = "ecs-drain-hook-service-role-"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
     Statement = [
       {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           Service = "lambda.amazonaws.com"
         }
@@ -113,10 +113,10 @@ resource "aws_iam_role" "ecs_drain_hook_function_service_role" {
 
 resource "aws_iam_policy" "ecs_drain_hook_function_service_role_default_policy" {
   policy = jsonencode({
-    Version   = "2012-10-17"
+    Version = "2012-10-17"
     Statement = [
       {
-        Action   = [
+        Action = [
           "ec2:DescribeInstances",
           "ec2:DescribeInstanceAttribute",
           "ec2:DescribeInstanceStatus",
@@ -131,7 +131,7 @@ resource "aws_iam_policy" "ecs_drain_hook_function_service_role_default_policy" 
         Resource = "arn:${local.partition}:autoscaling:${local.region}:${local.account_id}:autoScalingGroup:*:autoScalingGroupName/${aws_autoscaling_group.ecs_autoscaling_group.name}"
       },
       {
-        Action   = [
+        Action = [
           "ecs:DescribeContainerInstances",
           "ecs:DescribeTasks",
           "ecs:ListContainerInstances",
@@ -150,16 +150,16 @@ resource "aws_iam_policy" "ecs_drain_hook_function_service_role_default_policy" 
       }
     ]
   })
-  name   = "ecs_drain_hook_function_service_role_default_policy"
+  name = "ecs_drain_hook_function_service_role_default_policy"
 }
 
 resource "aws_iam_role" "service-task-def-execution-role" {
-  assume_role_policy  = jsonencode({
-    Version   = "2012-10-17"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
     Statement = [
       {
-        Action    = "sts:AssumeRole"
-        Effect    = "Allow"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
         Principal = {
           Service = "ecs-tasks.amazonaws.com"
         }
