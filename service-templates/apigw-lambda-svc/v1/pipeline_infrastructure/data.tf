@@ -215,7 +215,6 @@ data "aws_iam_policy_document" "pipeline_artifacts_bucket_key_policy" {
     effect    = "Allow"
     resources = ["*"]
     principals {
-      #todo -
       identifiers = [aws_iam_role.deployment_role.arn]
       type        = "AWS"
     }

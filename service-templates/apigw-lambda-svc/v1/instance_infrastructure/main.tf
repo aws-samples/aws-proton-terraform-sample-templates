@@ -10,8 +10,6 @@ resource "aws_apigatewayv2_api" "lambda" {
       "POST",
     ]
   }
-
-  #  target = aws_lambda_function.lambda_function.arn
 }
 
 resource "aws_apigatewayv2_stage" "lambda" {
