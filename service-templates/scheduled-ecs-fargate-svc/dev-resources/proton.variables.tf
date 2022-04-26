@@ -36,3 +36,10 @@ variable "service_instance" {
   })
   default = null
 }
+
+variable "pipeline" {
+  type = object({
+    inputs = map(string)
+  })
+  default = null
+}
