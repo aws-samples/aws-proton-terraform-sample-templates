@@ -25,13 +25,13 @@ resource "aws_cloudwatch_event_target" "ecs_scheduled_task" {
     task_definition_arn = aws_ecs_task_definition.ecs_task_definition_local.arn
 
     network_configuration {
-      subnets          = var.service_instance.inputs.subnet_type == "private" ? [
-                              var.environment.outputs.PrivateSubnet1,
-                              var.environment.outputs.PrivateSubnet2
-                            ] : [
-                              var.environment.outputs.PublicSubnet1,
-                              var.environment.outputs.PublicSubnet2
-                            ]
+      subnets = var.service_instance.inputs.subnet_type == "private" ? [
+        var.environment.outputs.PrivateSubnet1,
+        var.environment.outputs.PrivateSubnet2
+        ] : [
+        var.environment.outputs.PublicSubnet1,
+        var.environment.outputs.PublicSubnet2
+      ]
       assign_public_ip = var.service_instance.inputs.subnet_type == "private" ? false : true
     }
   }
@@ -43,11 +43,11 @@ resource "aws_cloudwatch_event_target" "ecs_scheduled_task" {
 #------------------------------------------------------------------------------
 
 resource "aws_ecs_task_definition" "ecs_task_definition_local" {
-  family                   = "${var.service.name}_${var.service_instance.name}"
-  cpu                      = 1024
-  memory                   = 2048
-  container_definitions    = jsonencode([{
-    name : "${ var.service_instance.name }-bar",
+  family = "${var.service.name}_${var.service_instance.name}"
+  cpu    = 1024
+  memory = 2048
+  container_definitions = jsonencode([{
+    name : "${var.service_instance.name}-bar",
     image : var.service_instance.inputs.image,
     cpu : 256
     memory : 512
@@ -125,9 +125,9 @@ resource "aws_iam_role_policy" "schedule_task_def_event_role_policy" {
         Action = [
           "ecs:RunTask",
         ]
-        Effect   = "Allow"
-        Resource = aws_ecs_task_definition.ecs_task_definition_local.arn
-        Condition = { "ArnEquals" : { "ecs:cluster": "${var.environment.outputs.ClusterArn}" }}
+        Effect    = "Allow"
+        Resource  = aws_ecs_task_definition.ecs_task_definition_local.arn
+        Condition = { "ArnEquals" : { "ecs:cluster" : "${var.environment.outputs.ClusterArn}" } }
       },
       {
         Action = [
@@ -153,7 +153,7 @@ resource "aws_iam_role_policy" "schedule_task_def_event_role_policy" {
 
 resource "aws_iam_role" "schedule_task_def_task_role" {
 
-    assume_role_policy = jsonencode({
+  assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
@@ -178,12 +178,11 @@ resource "aws_iam_role_policy" "scheduled-task-def-task-role-policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Action = "sns:Publish"
-        Effect = "Allow"
+        Action   = "sns:Publish"
+        Effect   = "Allow"
         Resource = var.environment.outputs.SnsTopicArn
       }
     ]
   })
-  role   = aws_iam_role.schedule_task_def_task_role.id
+  role = aws_iam_role.schedule_task_def_task_role.id
 }
-
