@@ -1,3 +1,15 @@
+output "SnsTopicArn" {
+  value = aws_sns_topic.ping_topic.arn
+}
+
+output "SnsTopicName" {
+  value = aws_sns_topic.ping_topic.name
+}
+
+output "SnsRegion" {
+  value = local.region
+}
+
 output "VpcId" {
   value = module.vpc.vpc_id
 }
@@ -24,12 +36,4 @@ output "VpcDefaultSecurityGroupId" {
 
 output "VpcConnectorArn" {
   value = aws_apprunner_vpc_connector.connector.id
-}
-
-output "SnsTopicName" {
-  value = aws_sns_topic.ping_topic.name
-}
-
-output "SnsRegion" {
-  value = local.region
 }
