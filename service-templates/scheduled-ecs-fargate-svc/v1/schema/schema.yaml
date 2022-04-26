@@ -25,6 +25,11 @@ schema:
           default: "public.ecr.aws/z9d2n7e1/nginx:1.21.0"
           minLength: 1
           maxLength: 200
+        subnet_type:
+          type: string
+          description: "Subnet type for your service"
+          enum: ["public", "private"]
+          default: "public"  
         schedule_expression:
           type: string
           description: "The schedule or rate (frequency) for CloudWatch Events"
