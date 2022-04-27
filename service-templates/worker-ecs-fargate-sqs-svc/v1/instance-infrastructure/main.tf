@@ -80,6 +80,7 @@ resource "aws_ecs_task_definition" "ecs_queue_processing_task_def" {
   family                   = "${var.service.name}_${var.service_instance.name}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
+  execution_role_arn       = var.environment.outputs.ServiceTaskDefExecutionRoleArn
   task_role_arn            = aws_iam_role.ecs_processing_queue_task_def_task_role.arn
 }
 
