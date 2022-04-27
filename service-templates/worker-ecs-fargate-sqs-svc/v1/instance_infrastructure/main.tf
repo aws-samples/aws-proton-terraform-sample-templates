@@ -73,13 +73,13 @@ resource "aws_ecs_task_definition" "ecs_queue_processing_task_def" {
         }
       }
       name   = var.service_instance.name,
-      cpu    = lookup(var.task_sizes[var.service_instance.inputs.task_size], "cpu"),
+      cpu    = lookup(var.task_sizes[var.service_instance.inputs.task_size], "cpu")
       memory = lookup(var.task_sizes[var.service_instance.inputs.task_size], "memory")
     }
   ])
   family                   = "${var.service.name}_${var.service_instance.name}"
-  cpu    = 1024
-  memory = 2048
+  cpu                      = 1024
+  memory                   = 2048
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = var.environment.outputs.ServiceTaskDefExecutionRoleArn
@@ -102,15 +102,15 @@ resource "aws_ecs_service" "ecs_queue_processing_ecs_fargate_service" {
   task_definition                    = aws_ecs_task_definition.ecs_queue_processing_task_def.arn
 
   network_configuration {
-      subnets = var.service_instance.inputs.subnet_type == "private" ? [
-        var.environment.outputs.PrivateSubnet1,
-        var.environment.outputs.PrivateSubnet2
-        ] : [
-        var.environment.outputs.PublicSubnet1,
-        var.environment.outputs.PublicSubnet2
-      ]
-      assign_public_ip = var.service_instance.inputs.subnet_type == "private" ? false : true
-    }
+    subnets = var.service_instance.inputs.subnet_type == "private" ? [
+      var.environment.outputs.PrivateSubnet1,
+      var.environment.outputs.PrivateSubnet2
+      ] : [
+      var.environment.outputs.PublicSubnet1,
+      var.environment.outputs.PublicSubnet2
+    ]
+    assign_public_ip = var.service_instance.inputs.subnet_type == "private" ? false : true
+  }
 }
 
 resource "aws_security_group" "ecs_queue_processing_ecs_fargate_service_security_group" {
