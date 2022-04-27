@@ -72,9 +72,9 @@ resource "aws_ecs_task_definition" "ecs_queue_processing_task_def" {
           awslogs-stream-prefix : "${var.service.name}/${var.service_instance.name}"
         }
       }
-      name = var.service_instance.name,
-      cpu  = lookup(var.task_sizes[var.service_instance.inputs.task_size], "cpu")
-      memory  = lookup(var.task_sizes[var.service_instance.inputs.task_size], "memory")
+      name   = var.service_instance.name,
+      cpu    = lookup(var.task_sizes[var.service_instance.inputs.task_size], "cpu")
+      memory = lookup(var.task_sizes[var.service_instance.inputs.task_size], "memory")
     }
   ])
   family                   = "${var.service.name}_${var.service_instance.name}"

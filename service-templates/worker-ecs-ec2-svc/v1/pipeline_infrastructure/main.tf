@@ -37,6 +37,7 @@ resource "aws_codebuild_project" "build_project" {
     image                       = "aws/codebuild/amazonlinux2-x86_64-standard:3.0"
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = true
 
     environment_variable {
       name  = "repo_name"
@@ -108,7 +109,7 @@ EOF
 resource "aws_codebuild_project" "deploy_project" {
   for_each = { for instance in var.service_instances : instance.name => instance }
 
-  name         = "${var.service.name}-deploy-${index(var.service_instances, each.value)}-project"
+  name         = "deploy-${var.service.name}-${index(var.service_instances, each.value)}"
   service_role = aws_iam_role.deployment_role.arn
 
   artifacts {
@@ -142,7 +143,7 @@ resource "aws_codebuild_project" "deploy_project" {
               "build": {
                 "commands": [
                   "pip3 install --upgrade --user awscli",
-                  "aws proton --region $AWS_DEFAULT_REGION update-service-instance --deployment-type CURRENT_VERSION --name $service_instance_name --service-name $service_name --spec file://${var.pipeline.inputs.code_dir}/rendered_service.yaml",
+                  "aws proton --region $AWS_DEFAULT_REGION update-service-instance --deployment-type CURRENT_VERSION --name $service_instance_name --service-name $service_name --spec file://${var.pipeline.inputs.service_dir}/rendered_service.yaml",
                   "aws proton --region $AWS_DEFAULT_REGION wait service-instance-deployed --name $service_instance_name --service-name $service_name"
                 ]
               }
@@ -310,18 +311,18 @@ resource "aws_codepipeline" "pipeline" {
     for_each = toset(var.service_instances)
 
     content {
-      name = "Deploy${index(var.service_instances, stage.value)}Project"
+      name = "deploy-${var.service.name}-${index(var.service_instances, stage.value)}"
 
       action {
         category  = "Build"
-        name      = "Deploy${index(var.service_instances, stage.value)}"
+        name      = "deploy-${var.service.name}-${index(var.service_instances, stage.value)}"
         owner     = "AWS"
         provider  = "CodeBuild"
         version   = "1"
         run_order = 1
 
         configuration = {
-          ProjectName = "${var.service.name}-deploy-${index(var.service_instances, stage.value)}-project"
+          ProjectName = "deploy-${var.service.name}-${index(var.service_instances, stage.value)}"
         }
         input_artifacts = ["BuildOutput"]
         role_arn        = aws_iam_role.pipeline_deploy_codepipeline_action_role.arn
