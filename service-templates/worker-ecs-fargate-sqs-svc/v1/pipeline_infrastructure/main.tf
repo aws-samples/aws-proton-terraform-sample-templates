@@ -78,8 +78,11 @@ resource "aws_ecs_task_definition" "ecs_queue_processing_task_def" {
     }
   ])
   family                   = "${var.service.name}_${var.service_instance.name}"
-  network_mode             = "bridge"
-  requires_compatibilities = ["EC2"]
+  cpu                      = 1024
+  memory                   = 2048
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  execution_role_arn       = var.environment.outputs.ServiceTaskDefExecutionRoleArn
   task_role_arn            = aws_iam_role.ecs_processing_queue_task_def_task_role.arn
 }
 
@@ -87,19 +90,30 @@ resource "aws_cloudwatch_log_group" "ecs_queue_processing_log_group" {
 
 }
 
-resource "aws_ecs_service" "ecs_queue_processing_ecs_ec2_service" {
+resource "aws_ecs_service" "ecs_queue_processing_ecs_fargate_service" {
   cluster                            = var.environment.outputs.ClusterName
   name                               = "${var.service.name}_${var.service_instance.name}"
   deployment_maximum_percent         = 200
   deployment_minimum_healthy_percent = 50
   desired_count                      = var.service_instance.inputs.desired_count
   enable_ecs_managed_tags            = false
-  launch_type                        = "EC2"
+  launch_type                        = "FARGATE"
   scheduling_strategy                = "REPLICA"
   task_definition                    = aws_ecs_task_definition.ecs_queue_processing_task_def.arn
+
+  network_configuration {
+    subnets = var.service_instance.inputs.subnet_type == "private" ? [
+      var.environment.outputs.PrivateSubnet1,
+      var.environment.outputs.PrivateSubnet2
+      ] : [
+      var.environment.outputs.PublicSubnet1,
+      var.environment.outputs.PublicSubnet2
+    ]
+    assign_public_ip = var.service_instance.inputs.subnet_type == "private" ? false : true
+  }
 }
 
-resource "aws_security_group" "ecs_queue_processing_ecs_ec2_service_security_group" {
+resource "aws_security_group" "ecs_queue_processing_ecs_fargate_service_security_group" {
   description = "Automatically created Security Group for the Service"
   egress {
     from_port   = 0
@@ -107,24 +121,24 @@ resource "aws_security_group" "ecs_queue_processing_ecs_ec2_service_security_gro
     to_port     = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
-  vpc_id = var.environment.outputs.VpcId
+  vpc_id = var.environment.outputs.Vpc
 }
 
-resource "aws_appautoscaling_target" "ecs_queue_processing_ecs_ec2_service_task_count_target" {
+resource "aws_appautoscaling_target" "ecs_queue_processing_ecs_fargate_service_task_count_target" {
   max_capacity       = 10
   min_capacity       = 1
-  resource_id        = "service/${var.environment.outputs.ClusterName}/${aws_ecs_service.ecs_queue_processing_ecs_ec2_service.name}"
+  resource_id        = "service/${var.environment.outputs.ClusterName}/${aws_ecs_service.ecs_queue_processing_ecs_fargate_service.name}"
   role_arn           = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
 
-resource "aws_appautoscaling_policy" "ecs_queue_processing_ecs_ec2_service_task_count_target_cpu_scaling" {
+resource "aws_appautoscaling_policy" "ecs_queue_processing_ecs_fargate_service_task_count_target_cpu_scaling" {
   name               = "WorkerECSEC2ServiceTaskCountTargetCpuScaling"
   policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs_queue_processing_ecs_ec2_service_task_count_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_queue_processing_ecs_ec2_service_task_count_target.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_queue_processing_ecs_ec2_service_task_count_target.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_queue_processing_ecs_fargate_service_task_count_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_queue_processing_ecs_fargate_service_task_count_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_queue_processing_ecs_fargate_service_task_count_target.service_namespace
   target_tracking_scaling_policy_configuration {
     target_value = 50
     predefined_metric_specification {
@@ -133,12 +147,12 @@ resource "aws_appautoscaling_policy" "ecs_queue_processing_ecs_ec2_service_task_
   }
 }
 
-resource "aws_appautoscaling_policy" "ecs_queue_processing_ecs_ec2_service_task_count_target_queue_messages_visible_lower_policy" {
+resource "aws_appautoscaling_policy" "ecs_queue_processing_ecs_fargate_service_task_count_target_queue_messages_visible_lower_policy" {
   name               = "WorkerECSEC2ServiceTaskCountTargetQueueMessagesVisibleScalingLowerPolicy"
   policy_type        = "StepScaling"
-  resource_id        = aws_appautoscaling_target.ecs_queue_processing_ecs_ec2_service_task_count_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_queue_processing_ecs_ec2_service_task_count_target.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_queue_processing_ecs_ec2_service_task_count_target.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_queue_processing_ecs_fargate_service_task_count_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_queue_processing_ecs_fargate_service_task_count_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_queue_processing_ecs_fargate_service_task_count_target.service_namespace
   step_scaling_policy_configuration {
     adjustment_type         = "ChangeInCapacity"
     metric_aggregation_type = "Maximum"
@@ -149,12 +163,12 @@ resource "aws_appautoscaling_policy" "ecs_queue_processing_ecs_ec2_service_task_
   }
 }
 
-resource "aws_cloudwatch_metric_alarm" "ecs_queue_processing_ecs_ec2_service_task_count_target_queue_messages_visible_lower_alarm" {
+resource "aws_cloudwatch_metric_alarm" "ecs_queue_processing_ecs_fargate_service_task_count_target_queue_messages_visible_lower_alarm" {
   alarm_name          = "${var.service.name}_${var.service_instance.name}_lower_threshold_scaling"
   comparison_operator = "LessThanOrEqualToThreshold"
   evaluation_periods  = 1
   alarm_actions = [
-    aws_appautoscaling_policy.ecs_queue_processing_ecs_ec2_service_task_count_target_queue_messages_visible_lower_policy.arn
+    aws_appautoscaling_policy.ecs_queue_processing_ecs_fargate_service_task_count_target_queue_messages_visible_lower_policy.arn
   ]
   alarm_description = "Lower threshold scaling alarm"
   dimensions = {
@@ -168,12 +182,12 @@ resource "aws_cloudwatch_metric_alarm" "ecs_queue_processing_ecs_ec2_service_tas
   threshold   = 0
 }
 
-resource "aws_appautoscaling_policy" "ecs_queue_processing_ecs_ec2_service_task_count_target_queue_messages_visible_upper_policy" {
+resource "aws_appautoscaling_policy" "ecs_queue_processing_ecs_fargate_service_task_count_target_queue_messages_visible_upper_policy" {
   name               = "WorkerECSEC2ServiceTaskCountTargetQueueMessagesVisibleScalingUpperPolicy"
   policy_type        = "StepScaling"
-  resource_id        = aws_appautoscaling_target.ecs_queue_processing_ecs_ec2_service_task_count_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_queue_processing_ecs_ec2_service_task_count_target.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_queue_processing_ecs_ec2_service_task_count_target.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_queue_processing_ecs_fargate_service_task_count_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_queue_processing_ecs_fargate_service_task_count_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_queue_processing_ecs_fargate_service_task_count_target.service_namespace
   step_scaling_policy_configuration {
     adjustment_type         = "ChangeInCapacity"
     metric_aggregation_type = "Maximum"
@@ -189,12 +203,12 @@ resource "aws_appautoscaling_policy" "ecs_queue_processing_ecs_ec2_service_task_
   }
 }
 
-resource "aws_cloudwatch_metric_alarm" "ecs_queue_processing_ecs_ec2_service_task_count_target_queue_messages_visible_upper_alarm" {
+resource "aws_cloudwatch_metric_alarm" "ecs_queue_processing_ecs_fargate_service_task_count_target_queue_messages_visible_upper_alarm" {
   alarm_name          = "${var.service.name}_${var.service_instance.name}_upper_threshold_scaling"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   alarm_actions = [
-    aws_appautoscaling_policy.ecs_queue_processing_ecs_ec2_service_task_count_target_queue_messages_visible_upper_policy.arn
+    aws_appautoscaling_policy.ecs_queue_processing_ecs_fargate_service_task_count_target_queue_messages_visible_upper_policy.arn
   ]
   alarm_description = "Upper threshold scaling alarm"
   dimensions = {
