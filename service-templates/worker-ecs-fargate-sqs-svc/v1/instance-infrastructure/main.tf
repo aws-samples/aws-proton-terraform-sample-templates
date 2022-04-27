@@ -73,11 +73,13 @@ resource "aws_ecs_task_definition" "ecs_queue_processing_task_def" {
         }
       }
       name   = var.service_instance.name,
-      cpu    = lookup(var.task_sizes[var.service_instance.inputs.task_size], "cpu")
+      cpu    = lookup(var.task_sizes[var.service_instance.inputs.task_size], "cpu"),
       memory = lookup(var.task_sizes[var.service_instance.inputs.task_size], "memory")
     }
   ])
   family                   = "${var.service.name}_${var.service_instance.name}"
+  cpu    = 1024
+  memory = 2048
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   execution_role_arn       = var.environment.outputs.ServiceTaskDefExecutionRoleArn
