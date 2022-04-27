@@ -10,19 +10,15 @@ resource "aws_iam_role" "service_access_role" {
         Principal = {
           Service = "build.apprunner.amazonaws.com"
         }
-      },
+      }
     ]
   })
 }
 
-resource "aws_iam_policy" "publish_2_sns_role_policy" {
-  name   = "publish_2_sns"
+resource "aws_iam_role_policy" "publish_2_sns_role_policy" {
+  name   = "publish_2_sns_role_policy"
   policy = data.aws_iam_policy_document.publish_2_sns.json
-}
-
-resource "aws_iam_role_policy_attachment" "publish_role_policy_attachment" {
-  policy_arn = aws_iam_policy.publish_2_sns_role_policy.arn
-  role       = aws_iam_role.service_access_role.name
+  role   = aws_iam_role.service_access_role.id
 }
 
 resource "aws_iam_policy" "service_access_role_default_policy" {
