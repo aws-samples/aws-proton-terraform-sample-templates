@@ -31,7 +31,7 @@ resource "aws_iam_policy" "service_access_role_default_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "service_access_role_default_policy" {
-  policy_arn = aws_iam_policy.publish_2_sns_role_policy.arn
+  policy_arn = aws_iam_policy.service_access_role_default_policy.arn
   role       = aws_iam_role.service_access_role.name
 }
 
