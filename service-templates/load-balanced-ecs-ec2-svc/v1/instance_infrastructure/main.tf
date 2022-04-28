@@ -96,11 +96,11 @@ resource "aws_ecs_task_definition" "service_task_definition" {
     {
       portMappings = [
         {
-          containerPort = var.service_instance.inputs.port
-          hostPort      = 0
+          containerPort = 80,
+          hostPort      = 0,
           protocol      = "tcp"
         }
-      ]
+      ],
       environment = [
         { name = "sns_topic_arn", value = "{ping:${var.environment.outputs.SnsTopic}" },
         { name = "sns_region", value = var.environment.outputs.SnsRegion },
