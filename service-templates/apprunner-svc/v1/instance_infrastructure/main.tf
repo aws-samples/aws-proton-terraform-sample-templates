@@ -13,22 +13,19 @@ resource "aws_iam_role" "service_access_role" {
       }
     ]
   })
-}
 
-resource "aws_iam_role_policy" "publish_2_sns_role_policy" {
-  policy = data.aws_iam_policy_document.publish_2_sns.json
-}
+  inline_policy {
+    name   = "publish_2_sns_role_policy"
+    policy = data.aws_iam_policy_document.publish_2_sns.json
+  }
 
-resource "aws_iam_role_policy_attachment" "publish_2_sns_role_policy_attachment" {
-  policy_arn = aws_iam_policy.publish_2_sns_role_policy.arn
-  role       = aws_iam_role.service_access_role.name
 }
 
 resource "aws_iam_policy" "service_access_role_default_policy" {
   policy = data.aws_iam_policy_document.service_access_role_default_policy.json
 }
 
-resource "aws_iam_policy_attachment" "service_access_role_default_policy_attachment" {
+resource "aws_iam_role_policy_attachment" "service_access_role_default_policy_attachment" {
   policy_arn = aws_iam_policy.service_access_role_default_policy.arn
   role       = aws_iam_role.service_access_role.name
 }
