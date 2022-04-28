@@ -47,5 +47,5 @@ output "CloudMapNamespaceId" {
 }
 
 output "ECSHostSecurityGroup" {
-  value = aws_security_group.ecs_host_security_group.arn
+  value = aws_security_group.ecs_host_security_group.name
 }
