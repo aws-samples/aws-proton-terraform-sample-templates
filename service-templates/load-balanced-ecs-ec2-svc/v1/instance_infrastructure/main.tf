@@ -35,7 +35,6 @@ resource "aws_lb" "service_lb" {
 
 resource "aws_lb_listener" "service_lb_public_listener" {
   load_balancer_arn = aws_lb.service_lb.arn
-  protocol          = var.service_instance.inputs.loadbalancer_type == "application" ? "HTTP" : "TCP"
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.service_lb_public_listener_target_group.arn
