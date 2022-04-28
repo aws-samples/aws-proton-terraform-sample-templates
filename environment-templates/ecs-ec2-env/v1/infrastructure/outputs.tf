@@ -46,6 +46,6 @@ output "CloudMapNamespaceId" {
   value = aws_service_discovery_private_dns_namespace.cloud_map_namespace.id
 }
 
-output "ECSHostSecurityGroup" {
-  value = aws_security_group.ecs_host_security_group.name
+output "ECSHostSecurityGroupId" {
+  value = aws_security_group.ecs_host_security_group.id
 }
