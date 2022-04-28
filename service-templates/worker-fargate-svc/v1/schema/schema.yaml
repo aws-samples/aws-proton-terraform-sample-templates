@@ -1,17 +1,17 @@
 schema:
   format:
     openapi: "3.0.0"
-  service_input_type: "WorkerECSFargateSQSServiceInput"
+  service_input_type: "WorkerFargateServiceInput"
   pipeline_input_type: "PipelineInputs"
 
   types:
-    WorkerECSFargateSQSServiceInput:
+    WorkerFargateServiceInput:
       type: object
-      description: "Input properties for a Worker ECS Fargate SQS service"
+      description: "Input properties for a Worker Fargate service"
       properties:
         desired_count:
           type: number
-          description: "The default number of ECS tasks you want running"
+          description: "The default number of Fargate tasks you want running"
           default: 1
           minimum: 1
         task_size:
