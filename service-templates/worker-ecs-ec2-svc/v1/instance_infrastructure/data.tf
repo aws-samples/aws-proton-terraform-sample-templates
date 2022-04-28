@@ -22,8 +22,7 @@ data "aws_iam_policy_document" "ecs_processing_queue_policy_document" {
   statement {
     effect = "Allow"
     actions = [
-      "sqs:ReceiveMessage",
-      "sqs:DeleteMessage"
+      "sqs:SendMessage",
     ]
     principals {
       identifiers = ["sns.amazonaws.com"]
