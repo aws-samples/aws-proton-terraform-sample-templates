@@ -47,11 +47,10 @@ resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
   port     = var.service_instance.inputs.port
   protocol = var.service_instance.inputs.loadbalancer_type == "application" ? "HTTP" : "TCP"
 
-  var.service_instance.inputs.loadbalancer_type == "application" ?
   stickiness {
     enabled = false
-    type    = "lb_cookie"
-  } : null
+    type    = var.service_instance.inputs.loadbalancer_type == "application" ? "lb_cookie" : "source_ip"
+  }
 
   target_type = "instance"
   vpc_id      = var.environment.outputs.VpcId
