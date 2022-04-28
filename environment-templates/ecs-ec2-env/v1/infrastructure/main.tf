@@ -63,12 +63,11 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
 }
 
 resource "aws_launch_configuration" "ec2_launch_config" {
-  image_id             = data.aws_ssm_parameter.ecs_ami.value
+  image_id             = data.aws_ssm_parameter.ami_id.value
   instance_type        = var.environment.inputs.InstanceType
   iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.arn
   security_groups = [
-    aws_security_group.ecs_host_security_group.id,
-    module.vpc.default_security_group_id
+    aws_security_group.ecs_host_security_group.id
   ]
   user_data = base64encode(
     <<-EOT
@@ -76,7 +75,7 @@ resource "aws_launch_configuration" "ec2_launch_config" {
   echo ECS_CLUSTER=${aws_ecs_cluster.cluster.name} >> /etc/ecs/ecs.config
   sudo iptables --insert FORWARD 1 --in-interface docker+ --destination 169.254.169.254/32 --jump DROP
   sudo service iptables save
-  echo ECS_AWSVPC_BLOCK_IMDS=true >> /etc/ecs/ecs.config"
+  echo ECS_AWSVPC_BLOCK_IMDS=true >> /etc/ecs/ecs.config
 EOT
   )
   depends_on = [

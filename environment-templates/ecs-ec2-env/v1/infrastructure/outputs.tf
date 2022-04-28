@@ -10,19 +10,19 @@ output "ServiceTaskDefExecutionRole" {
   value = aws_iam_role.service-task-def-execution-role.arn
 }
 
-output "SNSTopic" {
+output "SnsTopic" {
   value = aws_sns_topic.ping_topic.arn
 }
 
-output "SNSTopicName" {
+output "SnsTopicName" {
   value = aws_sns_topic.ping_topic.name
 }
 
-output "SNSRegion" {
+output "SnsRegion" {
   value = local.region
 }
 
-output "VPC" {
+output "VpcId" {
   value = module.vpc.vpc_id
 }
 

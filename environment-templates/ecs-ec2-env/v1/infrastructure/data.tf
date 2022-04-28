@@ -96,6 +96,47 @@ resource "aws_iam_role" "ecs_host_instance_role" {
   })
 }
 
+resource "aws_iam_policy" "ecs_host_instance_role_default_policy" {
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ecs:DeregisterContainerInstance",
+          "ecs:RegisterContainerInstance",
+          "ecs:Submit*"
+        ],
+        Effect   = "Allow"
+        Resource = aws_ecs_cluster.cluster.arn
+      },
+      {
+        Action = [
+          "ecs:Poll",
+          "ecs:StartTelemetrySession"
+        ],
+        Effect   = "Allow"
+        Resource = "*"
+        Condition : {
+          "ArnEquals" : {
+            "ecs:Cluster" : aws_ecs_cluster.cluster.arn
+          }
+        }
+      },
+      {
+        Action = [
+          "ecs:DiscoverPollEndpoint",
+          "ecr:GetAuthorizationToken",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+  name_prefix = "ecs_host_instance_role_default_policy_"
+}
+
 resource "aws_iam_role" "ecs_drain_hook_function_service_role" {
   name_prefix = "ecs-drain-hook-service-role-"
   assume_role_policy = jsonencode({
@@ -138,9 +179,6 @@ resource "aws_iam_policy" "ecs_drain_hook_function_service_role_default_policy" 
         Action = [
           "ecs:DescribeContainerInstances",
           "ecs:DescribeTasks",
-          "ecs:ListContainerInstances",
-          "ecs:SubmitContainerStateChange",
-          "ecs:SubmitTaskStateChange",
           "ecs:UpdateContainerInstancesState",
           "ecs:ListTasks"
         ],
@@ -151,10 +189,19 @@ resource "aws_iam_policy" "ecs_drain_hook_function_service_role_default_policy" 
         },
         Effect   = "Allow",
         Resource = "*"
+      },
+      {
+        Action = [
+          "ecs:ListContainerInstances",
+          "ecs:SubmitContainerStateChange",
+          "ecs:SubmitTaskStateChange"
+        ],
+        Effect   = "Allow",
+        Resource = aws_ecs_cluster.cluster.arn
       }
     ]
   })
-  name = "ecs_drain_hook_function_service_role_default_policy"
+  name_prefix = "ecs_drain_hook_service_role_default"
 }
 
 resource "aws_iam_role" "service-task-def-execution-role" {
@@ -175,7 +222,7 @@ resource "aws_iam_role" "service-task-def-execution-role" {
   ]
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_drain_hook_function_service_role_default_policy" {
+resource "aws_iam_role_policy_attachment" "ecs_drain_hook_function_service_role_default_policy_attachment" {
   role       = aws_iam_role.ecs_drain_hook_function_service_role.name
   policy_arn = aws_iam_policy.ecs_drain_hook_function_service_role_default_policy.arn
 }
@@ -185,7 +232,12 @@ resource "aws_iam_role_policy_attachment" "ecs_drain_hook_policy_attachment" {
   role       = aws_iam_role.ecs_drain_hook_role.name
 }
 
-data "aws_ssm_parameter" "ecs_ami" {
+resource "aws_iam_role_policy_attachment" "ecs_instance_role_policy_attachment" {
+  policy_arn = aws_iam_policy.ecs_host_instance_role_default_policy.arn
+  role       = aws_iam_role.ecs_host_instance_role.name
+}
+
+data "aws_ssm_parameter" "ami_id" {
   name = var.environment.inputs.ECSAMI
 }
 
