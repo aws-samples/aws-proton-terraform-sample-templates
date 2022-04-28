@@ -8,7 +8,7 @@ terraform {
 
   backend "s3" {
     region = "ap-northeast-1"
-    bucket = "terraform-samples-259837135622-worker-ecs-ec2-svc"
+    bucket = "terraform-samples-443437525071-lb-ecs-ec2-svc"
     key    = "instance.tfstate"
   }
 }
