@@ -70,13 +70,23 @@ resource "aws_iam_role_policy_attachment" "publish_role_policy_attachment" {
   role       = aws_iam_role.ecs_task_execution_role.name
 }
 
+variable "task_sizes" {
+  default = {
+    x-small = { cpu = 256, memory = 512 }
+    small   = { cpu = 512, memory = 1024 }
+    medium  = { cpu = 1024, memory = 2048 }
+    large   = { cpu = 2048, memory = 4096 }
+    x-large = { cpu = 4096, memory = 8192 }
+  }
+}
+
 resource "aws_ecs_task_definition" "service_task_definition" {
   family                   = "${var.service.name}_${var.service_instance.name}"
   task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
   execution_role_arn       = var.environment.outputs.ServiceTaskDefExecutionRole
   network_mode             = "bridge"
-  cpu                      = var.task_size_cpu[var.service_instance.inputs.task_size]
-  memory                   = var.task_size_memory[var.service_instance.inputs.task_size]
+  cpu                      = lookup(var.task_sizes[var.service_instance.inputs.task_size], "cpu")
+  memory                   = lookup(var.task_sizes[var.service_instance.inputs.task_size], "memory")
   requires_compatibilities = ["EC2"]
   container_definitions    = <<TASK_DEFINITION
   [
