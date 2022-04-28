@@ -80,6 +80,10 @@ variable "task_sizes" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "ecs_log_group" {
+
+}
+
 resource "aws_ecs_task_definition" "service_task_definition" {
   family                   = "${var.service.name}_${var.service_instance.name}"
   task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
@@ -88,35 +92,35 @@ resource "aws_ecs_task_definition" "service_task_definition" {
   cpu                      = lookup(var.task_sizes[var.service_instance.inputs.task_size], "cpu")
   memory                   = lookup(var.task_sizes[var.service_instance.inputs.task_size], "memory")
   requires_compatibilities = ["EC2"]
-  container_definitions    = <<TASK_DEFINITION
-  [
-      {
-        "name": "${var.service_instance.name}",
-        "image": "${var.service_instance.inputs.image}",
-        "essential": true,
-        "portMappings": [
-          {
-            "containerPort": ${var.service_instance.inputs.port},
-            "protocol": "tcp"
-          }
-        ],
-        "environment": [
-          {
-            "name": "sns_topic_arn",
-            "value": "{ping:${var.environment.outputs.SnsTopic}"
-          },
-          {
-            "name": "sns_region",
-            "value": "${var.environment.outputs.SnsRegion}"
-          },
-          {
-            "name": "backend_url",
-            "value": "${var.service_instance.inputs.backendurl}"
-          }
-        ]
+  container_definitions = jsonencode([
+    {
+      portMappings = [
+        {
+          containerPort = var.service_instance.inputs.port
+          hostPort      = 0
+          protocol      = "tcp"
+        }
+      ]
+      environment = [
+        { name = "sns_topic_arn", value = "{ping:${var.environment.outputs.SnsTopic}" },
+        { name = "sns_region", value = var.environment.outputs.SnsRegion },
+        { name = "backend_url", value = var.service_instance.inputs.backendurl }
+      ],
+      essential = true,
+      image     = var.service_instance.inputs.image,
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group : aws_cloudwatch_log_group.ecs_log_group.name,
+          awslogs-region : var.aws_region,
+          awslogs-stream-prefix : "${var.service.name}/${var.service_instance.name}"
+        }
       }
-  ]
-  TASK_DEFINITION
+      name   = var.service_instance.name,
+      cpu    = lookup(var.task_sizes[var.service_instance.inputs.task_size], "cpu")
+      memory = lookup(var.task_sizes[var.service_instance.inputs.task_size], "memory")
+    }
+  ])
 }
 
 
