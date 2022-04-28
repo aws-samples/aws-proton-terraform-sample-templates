@@ -128,7 +128,7 @@ resource "aws_service_discovery_service" "service_cloud_map_service" {
 
     dns_records {
       ttl  = 60
-      type = "A"
+      type = "SRV"
     }
 
     routing_policy = "MULTIVALUE"
@@ -165,18 +165,6 @@ resource "aws_ecs_service" "service" {
   task_definition = aws_ecs_task_definition.service_task_definition.arn
   depends_on      = [aws_lb_target_group.service_lb_public_listener_target_group, aws_lb_listener.service_lb_public_listener]
 }
-
-resource "aws_sqs_queue" "ecs_processing_dlq" {
-  message_retention_seconds = 1209600
-}
-
-resource "aws_sqs_queue" "ecs_processing_queue" {
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.ecs_processing_dlq.arn
-    maxReceiveCount     = 3
-  })
-}
-
 
 resource "aws_security_group" "service_security_group" {
   name        = "service_security_group"
