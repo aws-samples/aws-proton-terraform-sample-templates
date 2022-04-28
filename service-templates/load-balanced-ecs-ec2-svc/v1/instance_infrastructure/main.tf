@@ -112,9 +112,9 @@ resource "aws_ecs_task_definition" "service_task_definition" {
         }
       ],
       environment = [
-        { name = "sns_topic_arn", value = "{ping:${var.environment.outputs.SnsTopic}" },
-        { name = "sns_region", value = var.environment.outputs.SnsRegion },
-        { name = "backend_url", value = var.service_instance.inputs.backendurl }
+        { name = "SNS_TOPIC_ARN", value = "{ping:${var.environment.outputs.SnsTopic}" },
+        { name = "SNS_REGION", value = var.environment.outputs.SnsRegion },
+        { name = "BACKEND_RECORD", value = var.service_instance.inputs.backend_record }
       ],
       essential = true,
       image     = var.service_instance.inputs.image,
