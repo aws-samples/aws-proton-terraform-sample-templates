@@ -96,7 +96,7 @@ resource "aws_ecs_task_definition" "service_task_definition" {
     {
       portMappings = [
         {
-          containerPort = "${var.service_instance.inputs.port}"
+          containerPort = var.service_instance.inputs.port
           hostPort      = 0
           protocol      = "tcp"
         }
