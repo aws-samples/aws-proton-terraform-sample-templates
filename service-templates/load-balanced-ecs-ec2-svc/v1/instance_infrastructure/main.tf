@@ -195,15 +195,15 @@ resource "aws_security_group" "service_security_group" {
 }
 
 resource "aws_security_group_rule" "service_ingress" {
-  description = "Load balancer to target"
-  type        = "ingress"
-  from_port   = 80
-  to_port     = 80
-  protocol    = "tcp"
+  description       = "Load balancer to target"
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
   security_group_id = var.environment.outputs.ECSHostSecurityGroup
   #Network Load Balancers do not have associated security groups. See - https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html#target-security-groups
   source_security_group_id = var.service_instance.inputs.loadbalancer_type == "application" ? aws_security_group.service_security_group.id : null
-  cidr_blocks       = var.service_instance.inputs.loadbalancer_type == "application" ? null : ["0.0.0.0/0"]
+  cidr_blocks              = var.service_instance.inputs.loadbalancer_type == "application" ? null : ["0.0.0.0/0"]
 }
 
 resource "aws_appautoscaling_target" "service_task_count_target" {
