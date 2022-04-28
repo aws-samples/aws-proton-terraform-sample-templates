@@ -97,7 +97,7 @@ resource "aws_cloudwatch_log_group" "ecs_log_group" {
 resource "aws_ecs_task_definition" "service_task_definition" {
   family                   = "${var.service.name}_${var.service_instance.name}"
   task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
-  execution_role_arn       = var.environment.outputs.ServiceTaskDefExecutionRole
+  execution_role_arn       = var.environment.outputs.ServiceTaskDefExecutionRoleArn
   network_mode             = "bridge"
   cpu                      = lookup(var.task_sizes[var.service_instance.inputs.task_size], "cpu")
   memory                   = lookup(var.task_sizes[var.service_instance.inputs.task_size], "memory")
