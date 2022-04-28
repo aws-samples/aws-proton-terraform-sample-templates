@@ -121,7 +121,7 @@ resource "aws_security_group" "ecs_queue_processing_ecs_fargate_service_security
     to_port     = 0
     cidr_blocks = ["0.0.0.0/0"]
   }
-  vpc_id = var.environment.outputs.Vpc
+  vpc_id = var.environment.outputs.VpcId
 }
 
 resource "aws_appautoscaling_target" "ecs_queue_processing_ecs_fargate_service_task_count_target" {
