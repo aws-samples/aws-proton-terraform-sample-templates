@@ -51,7 +51,7 @@ resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
     enabled = var.service_instance.inputs.loadbalancer_type == "application" ? false : null
     type    = "lb_cookie"
   }
-  target_type = "ip"
+  target_type = "instance"
   vpc_id      = var.environment.outputs.VpcId
 }
 
