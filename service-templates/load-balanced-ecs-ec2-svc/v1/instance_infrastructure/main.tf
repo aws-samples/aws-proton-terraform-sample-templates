@@ -50,7 +50,7 @@ resource "aws_lb_listener" "service_lb_public_listener" {
   load_balancer_arn = aws_lb.service_lb.arn
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.service_lb_public_listener_target_group.arn
+    target_group_arn = aws_lb_target_group.service_lb_public_listener_target_group.id
   }
 }
 
