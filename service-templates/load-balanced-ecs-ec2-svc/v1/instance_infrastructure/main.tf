@@ -202,7 +202,7 @@ resource "aws_security_group_rule" "service_ingress" {
   protocol    = "tcp"
   #Network Load Balancers do not have associated security groups. See - https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html#target-security-groups
   security_group_id = var.service_instance.inputs.loadbalancer_type == "application" ? aws_security_group.service_security_group.id : null
-  cidr_blocks       = var.service_instance.inputs.loadbalancer_type == "application" ? null : ["0.0.0.0/0"]
+  cidr_blocks       = ["0.0.0.0/0"]
 }
 
 resource "aws_appautoscaling_target" "service_task_count_target" {
