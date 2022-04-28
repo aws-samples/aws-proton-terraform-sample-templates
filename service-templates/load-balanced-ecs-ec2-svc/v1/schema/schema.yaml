@@ -24,6 +24,15 @@ schema:
           description: "Subnet type for your service"
           enum: ["public", "private"]
           default: "public"
+        loadbalancer_type:
+          type: string
+          description: "Subnet type for your service"
+          enum: ["application", "network", "gateway"]
+          default: "gateway"
+        port:
+          type: integer
+          description: "Port number"
+          default: 80  
         image:
           type: string
           description: "The name/url of the container image"
