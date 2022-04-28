@@ -1,5 +1,0 @@
-infrastructure:
-  templates:
-    - file: "*"
-      rendering_engine: hcl
-      template_language: terraform

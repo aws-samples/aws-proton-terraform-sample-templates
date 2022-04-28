@@ -112,7 +112,7 @@ resource "aws_ecs_task_definition" "service_task_definition" {
         }
       ],
       environment = [
-        { name = "SNS_TOPIC_ARN", value = "{ping:${var.environment.outputs.SnsTopic}" },
+        { name = "SNS_TOPIC_ARN", value = "{ping:${var.environment.outputs.SnsTopicArn}" },
         { name = "SNS_REGION", value = var.environment.outputs.SnsRegion },
         { name = "BACKEND_RECORD", value = var.service_instance.inputs.backend_record }
       ],
@@ -155,7 +155,7 @@ resource "aws_service_discovery_service" "service_cloud_map_service" {
 
 resource "aws_ecs_service" "service" {
   name                               = "${var.service.name}_${var.service_instance.name}"
-  cluster                            = var.environment.outputs.Cluster
+  cluster                            = var.environment.outputs.ClusterName
   deployment_maximum_percent         = 200
   deployment_minimum_healthy_percent = 50
   desired_count                      = var.service_instance.inputs.desired_count
@@ -208,7 +208,7 @@ resource "aws_security_group_rule" "service_ingress" {
 resource "aws_appautoscaling_target" "service_task_count_target" {
   max_capacity       = 10
   min_capacity       = 1
-  resource_id        = "service/${var.environment.outputs.Cluster}/${aws_ecs_service.service.name}"
+  resource_id        = "service/${var.environment.outputs.ClusterName}/${aws_ecs_service.service.name}"
   role_arn           = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
