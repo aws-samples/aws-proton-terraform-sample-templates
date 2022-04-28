@@ -33,14 +33,6 @@ resource "aws_lb" "service_lb" {
   enable_deletion_protection = false
 }
 
-resource "aws_lb_listener" "service_lb_public_listener" {
-  load_balancer_arn = aws_lb.service_lb.arn
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.service_lb_public_listener_target_group.arn
-  }
-}
-
 resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
   port     = var.service_instance.inputs.port
   protocol = var.service_instance.inputs.loadbalancer_type == "application" ? "HTTP" : "TCP"
@@ -54,6 +46,13 @@ resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
   vpc_id      = var.environment.outputs.VpcId
 }
 
+resource "aws_lb_listener" "service_lb_public_listener" {
+  load_balancer_arn = aws_lb.service_lb.arn
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.service_lb_public_listener_target_group.arn
+  }
+}
 
 resource "aws_iam_role" "ecs_task_execution_role" {
   assume_role_policy = jsonencode({
