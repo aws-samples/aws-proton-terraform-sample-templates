@@ -39,6 +39,12 @@ schema:
           default: "public.ecr.aws/z9d2n7e1/nginx:1.21.0"
           minLength: 1
           maxLength: 200
+        backendurl:
+          type: string
+          description: "The service url"
+          default: "public.ecr.aws/z9d2n7e1/nginx:1.21.0"
+          minLength: 1
+          maxLength: 400
 
     PipelineInputs:
       type: object
