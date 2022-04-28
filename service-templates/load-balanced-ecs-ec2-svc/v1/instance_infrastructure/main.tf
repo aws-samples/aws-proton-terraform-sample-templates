@@ -55,6 +55,31 @@ resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
   vpc_id      = var.environment.outputs.VpcId
 }
 
+
+resource "aws_iam_role" "ecs_processing_queue_task_def_task_role" {
+  assume_role_policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "ecs-tasks.amazonaws.com"
+        },
+        "Action" : "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_processing_queue_task_def_task_role_policy_attachment" {
+  policy_arn = aws_iam_policy.ecs_processing_queue_task_def_task_role_policy.arn
+  role       = aws_iam_role.ecs_processing_queue_task_def_task_role.id
+}
+
+resource "aws_iam_policy" "ecs_processing_queue_task_def_task_role_policy" {
+  policy = data.aws_iam_policy_document.ecs_processing_queue_task_def_task_role_policy_document.json
+}
+
 resource "aws_iam_role" "ecs_task_execution_role" {
   name_prefix        = "service_task_definition_execution_role"
   assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_assume_role_policy.json
@@ -86,7 +111,7 @@ resource "aws_cloudwatch_log_group" "ecs_log_group" {
 
 resource "aws_ecs_task_definition" "service_task_definition" {
   family                   = "${var.service.name}_${var.service_instance.name}"
-  task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_processing_queue_task_def_task_role.arn
   execution_role_arn       = var.environment.outputs.ServiceTaskDefExecutionRole
   network_mode             = "bridge"
   cpu                      = lookup(var.task_sizes[var.service_instance.inputs.task_size], "cpu")
