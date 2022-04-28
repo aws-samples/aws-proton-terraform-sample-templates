@@ -181,7 +181,6 @@ resource "aws_ecs_service" "service" {
 }
 
 resource "aws_security_group" "service_security_group" {
-  name        = "service_security_group"
   description = "Automatically created Security Group for the Service"
   vpc_id      = var.environment.outputs.VpcId
 
