@@ -118,7 +118,7 @@ resource "aws_sns_topic" "ecs_drain_hook_topic" {
 resource "aws_sns_topic_subscription" "ecs_drain_hook_topic_subscription" {
   endpoint  = aws_lambda_function.ecs_drain_function.arn
   protocol  = "lambda"
-  topic_arn = aws_sns_topic.ecs_drain_hook_topic
+  topic_arn = aws_sns_topic.ecs_drain_hook_topic.arn
 }
 
 resource "aws_lambda_function" "ecs_drain_function" {
