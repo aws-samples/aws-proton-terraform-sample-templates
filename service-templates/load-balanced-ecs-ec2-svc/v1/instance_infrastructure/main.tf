@@ -138,18 +138,18 @@ resource "aws_ecs_service" "service" {
   enable_ecs_managed_tags            = false
   health_check_grace_period_seconds  = 60
   launch_type                        = "EC2"
-  scheduling_strategy = "REPLICA"
+  scheduling_strategy                = "REPLICA"
 
   load_balancer {
     container_name   = var.service_instance.name
     container_port   = var.service_instance.inputs.port
     target_group_arn = aws_lb_target_group.service_lb_public_listener_target_group.arn
   }
-  
+
   service_registries {
-    container_name   = var.service_instance.name
-    container_port   = var.service_instance.inputs.port
-    registry_arn     = aws_service_discovery_service.service_cloud_map_service.arn
+    container_name = var.service_instance.name
+    container_port = var.service_instance.inputs.port
+    registry_arn   = aws_service_discovery_service.service_cloud_map_service.arn
   }
 
   task_definition = aws_ecs_task_definition.service_task_definition.arn
