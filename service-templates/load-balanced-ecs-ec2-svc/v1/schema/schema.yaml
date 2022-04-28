@@ -1,17 +1,23 @@
 schema:
   format:
     openapi: "3.0.0"
-  service_input_type: "LBECSEC2ServiceInput"
+  service_input_type: "LoadBalancedECSEC2ServiceInput"
   pipeline_input_type: "PipelineInputs"
 
   types:
-    LBECSEC2ServiceInput:
+    LoadBalancedECSEC2ServiceInput:
       type: object
-      description: "Input properties for a LB ECSEC2 service"
+      description: "Input properties for a loadbalanced ECSEC2 service"
       properties:
+        port:
+          type: number
+          description: "The port to route traffic to"
+          default: 80
+          minimum: 0
+          maximum: 65535
         desired_count:
           type: number
-          description: "The default number of ECSEC2 tasks you want running"
+          description: "The default number of ECS tasks you want running"
           default: 1
           minimum: 1
         task_size:
@@ -19,32 +25,23 @@ schema:
           description: "The size of the task you want to run"
           enum: ["x-small", "small", "medium", "large", "x-large"]
           default: "x-small"
-        subnet_type:
-          type: string
-          description: "Subnet type for your service"
-          enum: ["public", "private"]
-          default: "public"
         loadbalancer_type:
           type: string
-          description: "Subnet type for your service"
-          enum: ["application", "network", "gateway"]
-          default: "gateway"
-        port:
-          type: integer
-          description: "Port number"
-          default: 80  
+          description: "Type of loadbalancer to front your service"
+          enum: ["application", "network"]
+          default: "application"
         image:
           type: string
           description: "The name/url of the container image"
           default: "public.ecr.aws/z9d2n7e1/nginx:1.21.0"
           minLength: 1
           maxLength: 200
-        backendurl:
+        backend_record:
           type: string
-          description: "The service url"
-          default: "public.ecr.aws/z9d2n7e1/nginx:1.21.0"
+          description: "SRV Record name of the backend service"
+          default: "backend-svc-inst.backend-svc.ecs-ec2-env.local"
           minLength: 1
-          maxLength: 400
+          maxLength: 200
 
     PipelineInputs:
       type: object
@@ -53,7 +50,7 @@ schema:
         service_dir:
           type: string
           description: "Source directory for the service"
-          default: "ecs-worker"
+          default: "ecs-static-website"
           minLength: 1
           maxLength: 100
         dockerfile:
