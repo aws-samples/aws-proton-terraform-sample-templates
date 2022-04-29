@@ -14,12 +14,12 @@ provider "aws" {
   region = var.aws_region
   default_tags {
     tags = {
-      environment = var.environment.name
+      "proton:environment" = var.environment.name
     }
   }
 }
 
 variable "aws_region" {
   type    = string
-  default = "ap-northeast-1"
+  default = "us-east-1"
 }
