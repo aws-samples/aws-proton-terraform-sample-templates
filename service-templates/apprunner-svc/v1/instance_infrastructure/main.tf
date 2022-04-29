@@ -4,19 +4,25 @@ resource "aws_iam_role" "service_access_role" {
   assume_role_policy = data.aws_iam_policy_document.service_access_assume_role.json
 }
 
-resource "aws_iam_role_policy" "publish_2_sns_role_policy" {
+resource "aws_iam_policy" "publish_2_sns_role_policy" {
   name   = "publish_2_sns_role_policy"
   policy = data.aws_iam_policy_document.publish_2_sns.json
-  role   = aws_iam_role.service_access_role.name
-
 }
 
-resource "aws_iam_role_policy" "service_access_role_default_policy" {
+resource "aws_iam_role_policy_attachment" "publish_2_sns_role_policy_attachment" {
+  policy_arn = aws_iam_policy.publish_2_sns_role_policy.arn
+  role       = aws_iam_role.service_access_role.name
+}
+
+resource "aws_iam_policy" "service_access_role_default_policy" {
   name   = "service_access_role_default_policy"
   policy = data.aws_iam_policy_document.service_access_role_default_policy.json
-  role   = aws_iam_role.service_access_role.name
 }
 
+resource "aws_iam_role_policy_attachment" "service_access_role_default_policy_attachment" {
+  policy_arn = aws_iam_policy.service_access_role_default_policy.arn
+  role       = aws_iam_role.service_access_role.name
+}
 resource "aws_apprunner_service" "service" {
   count        = var.service_instance.inputs.image != 0 ? 1 : 0
   service_name = var.service.name

@@ -27,14 +27,14 @@ data "aws_iam_policy_document" "service_access_assume_role" {
 
     principals {
       type        = "Service"
-      identifiers = ["apprunner.amazonaws.com"]
+      identifiers = ["build.apprunner.amazonaws.com"]
     }
   }
 }
 
 data "aws_iam_policy_document" "publish_2_sns" {
   statement {
-    actions   = ["sts:AssumeRole"]
+    actions   = ["sns:Publish"]
     effect    = "Allow"
     resources = [var.environment.outputs.SnsTopicArn]
 
