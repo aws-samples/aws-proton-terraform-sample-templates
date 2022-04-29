@@ -147,7 +147,7 @@ resource "aws_ecs_service" "service" {
   network_configuration {
     #    Assign a public IP address to the ENI
     assign_public_ip = var.service_instance.inputs.subnet_type == "private" ? false : true
-    security_groups  = [aws_security_group.lb_sg[0].id]
+    security_groups  = [aws_security_group.service_security_group.id]
     subnets          = var.service_instance.inputs.subnet_type == "private" ? [var.environment.outputs.PrivateSubnet1, var.environment.outputs.PrivateSubnet2] : [var.environment.outputs.PublicSubnet1, var.environment.outputs.PublicSubnet2]
   }
 
