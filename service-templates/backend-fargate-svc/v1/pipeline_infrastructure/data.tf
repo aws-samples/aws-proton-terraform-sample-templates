@@ -4,22 +4,6 @@ data "aws_caller_identity" "current" {}
 
 data "aws_partition" "current" {}
 
-data "aws_iam_policy_document" "function_bucket_policy_document" {
-  statement {
-    principals {
-      type        = "AWS"
-      identifiers = [for id in split(",", var.pipeline.inputs.environment_account_ids) : "arn:aws:iam::${id}:root"]
-    }
-    actions = [
-      "s3:GetObject"
-    ]
-    resources = [
-      aws_s3_bucket.function_bucket.arn,
-      "${aws_s3_bucket.function_bucket.arn}/*"
-    ]
-  }
-}
-
 data "aws_iam_policy_document" "publish_role_policy_document" {
   statement {
     effect = "Allow"
@@ -48,23 +32,26 @@ data "aws_iam_policy_document" "publish_role_policy_document" {
   statement {
     effect    = "Allow"
     resources = ["*"]
-    actions   = ["proton:GetService"]
+    actions   = ["ecr:GetAuthorizationToken"]
   }
   statement {
     effect = "Allow"
     resources = [
-      aws_s3_bucket.function_bucket.arn,
-      "${aws_s3_bucket.function_bucket.arn}/*"
+      aws_ecr_repository.ecr_repo.arn
     ]
     actions = [
-      "s3:GetObject*",
-      "s3:GetBucket*",
-      "s3:List*",
-      "s3:DeleteObject*",
-      "s3:PutObject*",
-      "s3:Abort*",
-      "s3:CreateMultipartUpload"
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:CompleteLayerUpload",
+      "ecr:GetAuthorizationToken",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart"
     ]
+  }
+  statement {
+    effect    = "Allow"
+    resources = ["*"]
+    actions   = ["proton:GetService"]
   }
   statement {
     effect = "Allow"
@@ -110,7 +97,7 @@ data "aws_iam_policy_document" "deployment_role_policy" {
   statement {
     effect = "Allow"
     resources = [
-      "arn:aws:codebuild:${local.region}:${local.account_id}:report-group:/deploy-*",
+      "arn:aws:codebuild:${local.region}:${local.account_id}:report-group:/deploy--*",
     ]
     actions = [
       "codebuild:CreateReportGroup",
@@ -297,7 +284,7 @@ data "aws_iam_policy_document" "pipeline_build_codepipeline_action_role_policy" 
 data "aws_iam_policy_document" "pipeline_deploy_codepipeline_action_role_policy" {
   statement {
     effect    = "Allow"
-    resources = ["arn:aws:codebuild:${local.region}:${local.account_id}:project/deploy-*"]
+    resources = ["arn:aws:codebuild:${local.region}:${local.account_id}:project/deploy-*", ]
     actions = [
       "codebuild:BatchGetBuilds",
       "codebuild:StartBuild",

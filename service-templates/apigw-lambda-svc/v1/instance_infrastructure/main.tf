@@ -14,7 +14,6 @@ resource "aws_apigatewayv2_api" "lambda" {
 
 resource "aws_apigatewayv2_stage" "lambda" {
   api_id = aws_apigatewayv2_api.lambda.id
-
   name        = "${var.service.name}-${var.service_instance.name}-stage"
   auto_deploy = true
 

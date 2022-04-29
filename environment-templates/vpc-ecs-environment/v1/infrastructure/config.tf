@@ -12,11 +12,9 @@ terraform {
 # Configure the AWS Provider
 provider "aws" {
   region = var.aws_region
-  alias  = "default"
-
   default_tags {
     tags = {
-      "proton:service" = var.service.name
+      environment = var.environment.name
     }
   }
 }

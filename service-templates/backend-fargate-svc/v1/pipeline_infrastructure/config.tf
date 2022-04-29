@@ -16,7 +16,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      "proton:service" = var.service.name
+      "proton:pipeline" = var.service.name
     }
   }
 }
