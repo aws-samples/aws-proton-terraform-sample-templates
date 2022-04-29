@@ -1,5 +1,6 @@
 .DS_Store
 *.DS_Store
-*.terraform*
 dev.proton.auto.tfvars.json
 dev.proton.variables.tf
+terraform.tfstate
+.terraform*
