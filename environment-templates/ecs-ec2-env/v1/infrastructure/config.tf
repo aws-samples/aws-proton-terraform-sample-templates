@@ -6,11 +6,7 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket = "aws-proton-terraform-bucket-074207182078"
-    region = "ap-northeast-1"
-    key    = "ecs-ec2-env/terraform.tfstate"
-  }
+  backend "s3" {}
 }
 
 # Configure the AWS Provider
