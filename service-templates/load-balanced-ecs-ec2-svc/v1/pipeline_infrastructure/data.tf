@@ -4,22 +4,6 @@ data "aws_caller_identity" "current" {}
 
 data "aws_partition" "current" {}
 
-#data "aws_iam_policy_document" "function_bucket_policy_document" {
-#  statement {
-#    principals {
-#      type        = "AWS"
-#      identifiers = [for id in split(",", var.pipeline.inputs.environment_account_ids) : "arn:aws:iam::${id}:root"]
-#    }
-#    actions = [
-#      "s3:GetObject"
-#    ]
-#    resources = [
-#      aws_s3_bucket.function_bucket.arn,
-#      "${aws_s3_bucket.function_bucket.arn}/*"
-#    ]
-#  }
-#}
-
 data "aws_iam_policy_document" "publish_role_policy_document" {
   statement {
     effect = "Allow"
