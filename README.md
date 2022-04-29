@@ -10,6 +10,27 @@ All of the Templates in this directory are set up to work with [AWS Proton Templ
 ### Running Terraform Using AWS Proton Self-managed Provisioning
 If you need an example of how to run your Terraform code, head on over to [this repo](https://github.com/aws-samples/aws-proton-terraform-github-actions-sample) where we offer an example of running Terraform using GitHub Actions.
 
+###Local Development
+
+For local development, the `<template>/dev-resources/` directory contains variable definitions/values which are normally generated
+by Proton at provision time:
+
+- `proton.variables.tf`: variable type definitions
+- `proton.auto.tfvars.json`: variable value assignments (contains provisioning inputs, environment outputs etc)
+
+To test a template locally, you can create symbolic links to these files in the infrastructure directory. E.g.:
+
+```
+cd <template>/vx/<infrastructure>/
+ln -s ../../dev-resources/proton.variables.tf .
+ln -s ../../dev-resources/proton.auto.tfvars.json .
+terraform init
+terraform plan
+```
+
+Note that you will need to populate `proton.auto.tfvars.json` with the required values according to the template. For
+environments, this will typically be the `environment.name` and `environment.inputs` fields.
+
 ## Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.

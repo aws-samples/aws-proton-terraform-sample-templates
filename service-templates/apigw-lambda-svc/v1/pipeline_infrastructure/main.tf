@@ -13,6 +13,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "aes256" {
 }
 
 resource "aws_s3_bucket_policy" "function_bucket_policy" {
+  count  = var.pipeline.inputs.environment_account_ids != "" ? 1 : 0
   policy = data.aws_iam_policy_document.function_bucket_policy_document.json
   bucket = aws_s3_bucket.function_bucket.id
 }
@@ -81,8 +82,8 @@ resource "aws_codebuild_project" "build_project" {
                     "post_build": {
                       "commands": [
                         "aws proton --region $AWS_DEFAULT_REGION get-service --name $service_name | jq -r .service.spec > service.yaml",
-                        "yq w service.yaml 'instances[*].spec.lambda_bucket' \"$bucket_name\" > rendered_service.yaml",
-                        "yq w service.yaml 'instances[*].spec.lambda_key' \"$FUNCTION_KEY\" > rendered_service.yaml"
+                        "yq w service.yaml 'instances[*].spec.lambda_bucket' \"$bucket_name\" > rendered_service_tmp.yaml",
+                        "yq w rendered_service_tmp.yaml 'instances[*].spec.lambda_key' \"$FUNCTION_KEY\" > rendered_service.yaml"
                       ]
                     }
                   },
@@ -103,8 +104,7 @@ encryption_key = aws_kms_key.pipeline_artifacts_bucket_key.arn
 
 resource "aws_codebuild_project" "deploy_project" {
   for_each = { for instance in var.service_instances : instance.name => instance }
-
-  name         = "Deploy${index(var.service_instances, each.value)}Project"
+  name         = "deploy-${var.service.name}-${index(var.service_instances, each.value)}"
   service_role = aws_iam_role.deployment_role.arn
 
   artifacts {
@@ -138,6 +138,8 @@ resource "aws_codebuild_project" "deploy_project" {
               "build": {
                 "commands": [
                   "pip3 install --upgrade --user awscli",
+                  "echo 'rendered_service.yaml':",
+                  "cat ${var.pipeline.inputs.code_dir}/rendered_service.yaml",
                   "aws proton --region $AWS_DEFAULT_REGION update-service-instance --deployment-type CURRENT_VERSION --name $service_instance_name --service-name $service_name --spec file://${var.pipeline.inputs.code_dir}/rendered_service.yaml",
                   "aws proton --region $AWS_DEFAULT_REGION wait service-instance-deployed --name $service_instance_name --service-name $service_name"
                 ]
@@ -268,7 +270,7 @@ resource "aws_codepipeline" "pipeline" {
     name = "Source"
     action {
       category  = "Source"
-      name      = "Source"
+      name      = "Checkout"
       owner     = "AWS"
       provider  = "CodeStarSourceConnection"
       version   = "1"
@@ -306,18 +308,18 @@ resource "aws_codepipeline" "pipeline" {
     for_each = toset(var.service_instances)
 
     content {
-      name = "Deploy${index(var.service_instances, stage.value)}Project"
+      name = "deploy-${var.service.name}-${index(var.service_instances, stage.value)}"
 
       action {
         category  = "Build"
-        name      = "Deploy${index(var.service_instances, stage.value)}"
+        name      = "deploy-${var.service.name}-${index(var.service_instances, stage.value)}"
         owner     = "AWS"
         provider  = "CodeBuild"
         version   = "1"
         run_order = 1
 
         configuration = {
-          ProjectName = "Deploy${index(var.service_instances, stage.value)}Project"
+          ProjectName = "deploy-${var.service.name}-${index(var.service_instances, stage.value)}"
         }
         input_artifacts = ["BuildOutput"]
         role_arn        = aws_iam_role.pipeline_deploy_codepipeline_action_role.arn

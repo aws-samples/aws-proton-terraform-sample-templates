@@ -10,14 +10,11 @@ resource "aws_apigatewayv2_api" "lambda" {
       "POST",
     ]
   }
-
-  #  target = aws_lambda_function.lambda_function.arn
 }
 
 resource "aws_apigatewayv2_stage" "lambda" {
   api_id = aws_apigatewayv2_api.lambda.id
-
-  name        = "serverless_lambda_stage"
+  name        = "${var.service.name}-${var.service_instance.name}-stage"
   auto_deploy = true
 
   access_log_settings {
@@ -45,7 +42,7 @@ resource "aws_cloudwatch_log_group" "api_gw" {
 }
 
 resource "aws_lambda_function" "lambda_function" {
-  function_name = "${var.service_instance.name}-function"
+  function_name = "${var.service.name}-${var.service_instance.name}-function"
   runtime       = var.service_instance.inputs.lambda_runtime
   role          = aws_iam_role.lambda_exec.arn
 
@@ -86,7 +83,7 @@ resource "aws_lambda_permission" "api_gw" {
 }
 
 resource "aws_iam_role" "lambda_exec" {
-  name = "serverless_lambda"
+  name_prefix = "serverless_lambda"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -114,46 +111,4 @@ resource "aws_iam_role_policy_attachment" "ssn_publish_policy" {
 
 resource "aws_iam_policy" "sns_publish_policy" {
   policy = data.aws_iam_policy_document.sns_publish_policy_document.json
-}
-
-data "aws_iam_policy_document" "sns_publish_policy_document" {
-  statement {
-    actions = [
-      "sns:Publish"
-    ]
-    resources = [
-      var.environment.outputs.SnsTopicArn
-    ]
-  }
-}
-
-data "archive_file" "lambda_zip_inline" {
-  type        = "zip"
-  output_path = "lambda_zip_inline.zip"
-
-  source {
-    filename = "index.js"
-    content  = <<EOF
-        exports.handler = async (event, context) => {
-          try {
-            // Log event and context object to CloudWatch Logs
-            console.log("Event: ", JSON.stringify(event, null, 2));
-            console.log("Context: ", JSON.stringify(context, null, 2));
-            // Create event object to return to caller
-            const eventObj = {
-              functionName: context.functionName,
-              rawPath: event.rawPath,
-            };
-            const response = {
-              statusCode: 200,
-              body: JSON.stringify(eventObj, null, 2),
-            };
-            return response;
-          } catch (error) {
-            console.error(error);
-            throw new Error(error);
-          }
-        };
-EOF
-  }
 }
