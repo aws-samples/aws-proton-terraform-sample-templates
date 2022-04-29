@@ -6,11 +6,7 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket = "racicot-arrow-testing"
-    region = "us-east-1"
-    key    = "scheduled-ecs-ec2-svc.state"
-  }
+  backend "s3" {}
 }
 
 # Configure the AWS Provider
