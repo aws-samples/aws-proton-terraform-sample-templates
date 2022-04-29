@@ -28,7 +28,7 @@ resource "aws_lb" "service_lb" {
   name               = "${var.service.name}-lb"
   load_balancer_type = var.service_instance.inputs.loadbalancer_type
   security_groups    = var.service_instance.inputs.loadbalancer_type == "application" ? [aws_security_group.lb_sg[0].id] : null
-  subnets            = [var.environment.outputs.PublicSubnet1, var.environment.outputs.PublicSubnet2]
+  subnets            = [var.environment.outputs.PublicSubnetOneId, var.environment.outputs.PublicSubnetTwoId]
 
   enable_deletion_protection = false
 }
