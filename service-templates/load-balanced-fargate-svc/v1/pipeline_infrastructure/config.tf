@@ -6,11 +6,7 @@ terraform {
     }
   }
 
-  backend "s3" {
-    region = "ap-northeast-1"
-    bucket = "terraform-samples-443437525071-worker-ecs-fargate-sqs-svc"
-    key    = "pipeline.tfstate"
-  }
+  backend "s3" {}
 }
 
 # Configure the AWS Provider

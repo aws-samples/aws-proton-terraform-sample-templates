@@ -1,13 +1,13 @@
 schema:
   format:
     openapi: "3.0.0"
-  service_input_type: "WorkerFargateServiceInput"
+  service_input_type: "ScheduledFargateTaskInput"
   pipeline_input_type: "PipelineInputs"
 
   types:
-    WorkerFargateServiceInput:
+    ScheduledFargateTaskInput:
       type: object
-      description: "Input properties for a Worker Fargate service"
+      description: "Input properties for Scheduled Fargate Task"
       properties:
         desired_count:
           type: number
@@ -30,6 +30,12 @@ schema:
           default: "public.ecr.aws/z9d2n7e1/nginx:1.21.0"
           minLength: 1
           maxLength: 200
+        schedule_expression:
+          type: string
+          description: "The schedule or rate (frequency) for EventBridge Events"
+          default: "rate(5 minutes)"
+          minLength: 1
+          maxLength: 200
 
     PipelineInputs:
       type: object
@@ -38,7 +44,7 @@ schema:
         service_dir:
           type: string
           description: "Source directory for the service"
-          default: "ecs-worker"
+          default: "ecs-ping-sns"
           minLength: 1
           maxLength: 100
         dockerfile:
