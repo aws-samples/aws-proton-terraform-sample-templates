@@ -2,7 +2,7 @@ resource "aws_security_group" "lb_sg" {
   count       = var.service_instance.inputs.loadbalancer_type == "application" ? 1 : 0
   name        = "service_lb_security_group"
   description = "Automatically created Security Group for Application LB."
-  vpc_id      = var.environment.outputs.Vpc
+  vpc_id      = var.environment.outputs.VpcId
 
   ingress {
     description = "Allow from anyone on port 80"
@@ -28,7 +28,7 @@ resource "aws_lb" "service_lb" {
   name               = "${var.service.name}-lb"
   load_balancer_type = var.service_instance.inputs.loadbalancer_type
   security_groups    = var.service_instance.inputs.loadbalancer_type == "application" ? [aws_security_group.lb_sg[0].id] : null
-  subnets            = [var.environment.outputs.PublicSubnet1, var.environment.outputs.PublicSubnet2]
+  subnets            = [var.environment.outputs.PublicSubnetOneId, var.environment.outputs.PublicSubnetTwoId]
 
   enable_deletion_protection = false
 }
@@ -52,7 +52,7 @@ resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
     type    = var.service_instance.inputs.loadbalancer_type == "application" ? "lb_cookie" : "source_ip"
   }
   target_type = "ip"
-  vpc_id      = var.environment.outputs.Vpc
+  vpc_id      = var.environment.outputs.VpcId
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
@@ -148,7 +148,7 @@ resource "aws_ecs_service" "service" {
     #    Assign a public IP address to the ENI
     assign_public_ip = var.service_instance.inputs.subnet_type == "private" ? false : true
     security_groups  = [aws_security_group.service_security_group.id]
-    subnets          = var.service_instance.inputs.subnet_type == "private" ? [var.environment.outputs.PrivateSubnet1, var.environment.outputs.PrivateSubnet2] : [var.environment.outputs.PublicSubnet1, var.environment.outputs.PublicSubnet2]
+    subnets          = var.service_instance.inputs.subnet_type == "private" ? [var.environment.outputs.PrivateSubnetOneId, var.environment.outputs.PrivateSubnetTwoId] : [var.environment.outputs.PublicSubnetOneId, var.environment.outputs.PublicSubnetTwoId]
   }
 
   task_definition = aws_ecs_task_definition.service_task_definition.arn
@@ -177,7 +177,7 @@ resource "aws_service_discovery_service" "service_cloud_map_service" {
 resource "aws_security_group" "service_security_group" {
   name        = "service_security_group"
   description = "Automatically created Security Group for the Service"
-  vpc_id      = var.environment.outputs.Vpc
+  vpc_id      = var.environment.outputs.VpcId
 
   egress {
     description = "Allow all outbound traffic by default"
