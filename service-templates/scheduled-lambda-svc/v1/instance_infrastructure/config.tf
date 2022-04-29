@@ -6,11 +6,7 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket = "racicot-proton-test-nrt"
-    region = "ap-northeast-1"
-    key    = "scheduled-lambda-svc-my-instance.state"
-  }
+  backend "s3" {}
 }
 
 # Configure the AWS Provider
