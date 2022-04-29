@@ -21,14 +21,14 @@ resource "aws_security_group_rule" "lb_sg_egress" {
   to_port           = 80
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.service_security_group.id
+  security_group_id = aws_security_group.lb_sg[0].id
 }
 
 resource "aws_lb" "service_lb" {
   name               = "${var.service.name}-lb"
   load_balancer_type = var.service_instance.inputs.loadbalancer_type
   security_groups    = var.service_instance.inputs.loadbalancer_type == "application" ? [aws_security_group.lb_sg[0].id] : null
-  subnets            = [var.environment.outputs.PublicSubnet1, var.environment.outputs.PublicSubnet2]
+  subnets            = [var.environment.outputs.PublicSubnetOneId, var.environment.outputs.PublicSubnetTwoId]
 
   enable_deletion_protection = false
 }
@@ -48,26 +48,35 @@ resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
   protocol = var.service_instance.inputs.loadbalancer_type == "application" ? "HTTP" : "TCP"
 
   stickiness {
-    enabled = var.service_instance.inputs.loadbalancer_type == "application" ? false : null
-    type    = "lb_cookie"
+    enabled = false
+    type    = var.service_instance.inputs.loadbalancer_type == "application" ? "lb_cookie" : "source_ip"
   }
   target_type = "ip"
   vpc_id      = var.environment.outputs.VpcId
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name_prefix        = "service_task_definition_execution_role"
-  assume_role_policy = data.aws_iam_policy_document.ecs_task_execution_assume_role_policy.json
-}
-
-resource "aws_iam_policy" "ecs_task_execution_role_policy" {
-  name   = "publish_2_sns"
-  policy = data.aws_iam_policy_document.ecs_task_execution_role_policy.json
+  assume_role_policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "ecs-tasks.amazonaws.com"
+        },
+        "Action" : "sts:AssumeRole"
+      }
+    ]
+  })
 }
 
 resource "aws_iam_role_policy_attachment" "publish_role_policy_attachment" {
   policy_arn = aws_iam_policy.ecs_task_execution_role_policy.arn
   role       = aws_iam_role.ecs_task_execution_role.name
+}
+
+resource "aws_iam_policy" "ecs_task_execution_role_policy" {
+  policy = data.aws_iam_policy_document.ecs_task_execution_role_policy_document.json
 }
 
 resource "aws_ecs_task_definition" "service_task_definition" {
@@ -128,8 +137,8 @@ resource "aws_ecs_service" "service" {
   network_configuration {
     #    Assign a public IP address to the ENI
     assign_public_ip = var.service_instance.inputs.subnet_type == "private" ? false : true
-    security_groups  = [aws_security_group.lb_sg[0].id]
-    subnets          = var.service_instance.inputs.subnet_type == "private" ? [var.environment.outputs.PrivateSubnet1, var.environment.outputs.PrivateSubnet2] : [var.environment.outputs.PublicSubnet1, var.environment.outputs.PublicSubnet2]
+    security_groups  = [aws_security_group.service_security_group.id]
+    subnets          = var.service_instance.inputs.subnet_type == "private" ? [var.environment.outputs.PrivateSubnetOneId, var.environment.outputs.PrivateSubnetTwoId] : [var.environment.outputs.PublicSubnetOneId, var.environment.outputs.PublicSubnetTwoId]
   }
 
   task_definition = aws_ecs_task_definition.service_task_definition.arn
