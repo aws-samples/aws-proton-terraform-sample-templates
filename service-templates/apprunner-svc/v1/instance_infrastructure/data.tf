@@ -20,6 +20,18 @@ variable "task_size_memory" {
   }
 }
 
+data "aws_iam_policy_document" "service_access_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    effect  = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["apprunner.amazonaws.com"]
+    }
+  }
+}
+
 data "aws_iam_policy_document" "publish_2_sns" {
   statement {
     actions   = ["sts:AssumeRole"]
@@ -39,6 +51,5 @@ data "aws_iam_policy_document" "service_access_role_default_policy" {
     ]
     effect    = "Allow"
     resources = ["*"]
-
   }
 }

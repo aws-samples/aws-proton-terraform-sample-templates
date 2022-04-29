@@ -1,33 +1,20 @@
 resource "aws_iam_role" "service_access_role" {
   name_prefix = "service_access_role"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "build.apprunner.amazonaws.com"
-        }
-      }
-    ]
-  })
+  assume_role_policy = data.aws_iam_policy_document.service_access_assume_role.json
+}
 
-  inline_policy {
-    name   = "publish_2_sns_role_policy"
-    policy = data.aws_iam_policy_document.publish_2_sns.json
-  }
+resource "aws_iam_role_policy" "publish_2_sns_role_policy" {
+  name   = "publish_2_sns_role_policy"
+  policy = data.aws_iam_policy_document.publish_2_sns.json
+  role   = aws_iam_role.service_access_role.name
 
 }
 
-resource "aws_iam_policy" "service_access_role_default_policy" {
+resource "aws_iam_role_policy" "service_access_role_default_policy" {
+  name   = "service_access_role_default_policy"
   policy = data.aws_iam_policy_document.service_access_role_default_policy.json
-}
-
-resource "aws_iam_role_policy_attachment" "service_access_role_default_policy_attachment" {
-  policy_arn = aws_iam_policy.service_access_role_default_policy.arn
-  role       = aws_iam_role.service_access_role.name
+  role   = aws_iam_role.service_access_role.name
 }
 
 resource "aws_apprunner_service" "service" {
