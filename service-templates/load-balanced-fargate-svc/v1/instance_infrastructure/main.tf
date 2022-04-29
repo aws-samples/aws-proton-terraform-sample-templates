@@ -79,6 +79,16 @@ resource "aws_iam_policy" "ecs_task_execution_role_policy" {
   policy = data.aws_iam_policy_document.ecs_task_execution_role_policy_document.json
 }
 
+variable "task_sizes" {
+  default = {
+    x-small = { cpu = 256, memory = 512 }
+    small   = { cpu = 512, memory = 1024 }
+    medium  = { cpu = 1024, memory = 2048 }
+    large   = { cpu = 2048, memory = 4096 }
+    x-large = { cpu = 4096, memory = 8192 }
+  }
+}
+
 resource "aws_ecs_task_definition" "service_task_definition" {
   family                   = "${var.service.name}_${var.service_instance.name}"
   task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
