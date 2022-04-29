@@ -1,14 +1,20 @@
 schema:
   format:
     openapi: "3.0.0"
-  service_input_type: "ScheduledFargateTaskInput"
+  service_input_type: "LoadBalancedFargateServiceInput"
   pipeline_input_type: "PipelineInputs"
 
   types:
-    ScheduledFargateTaskInput:
+    LoadBalancedFargateServiceInput:
       type: object
-      description: "Input properties for Scheduled Fargate Task"
+      description: "Input properties for a loadbalanced Fargate service"
       properties:
+        port:
+          type: number
+          description: "The port to route traffic to"
+          default: 80
+          minimum: 0
+          maximum: 65535
         desired_count:
           type: number
           description: "The default number of Fargate tasks you want running"
@@ -24,16 +30,21 @@ schema:
           description: "Subnet type for your service"
           enum: ["public", "private"]
           default: "public"
+        loadbalancer_type:
+          type: string
+          description: "Type of loadbalancer to front your service"
+          enum: ["application", "network"]
+          default: "application"
         image:
           type: string
           description: "The name/url of the container image"
           default: "public.ecr.aws/z9d2n7e1/nginx:1.21.0"
           minLength: 1
           maxLength: 200
-        schedule_expression:
+        backendurl:
           type: string
-          description: "The schedule or rate (frequency) for EventBridge Events"
-          default: "rate(5 minutes)"
+          description: "Service discovery url of the backend service"
+          default: "backend-svc-inst.backend-svc.fargate-env.local:80"
           minLength: 1
           maxLength: 200
 
@@ -44,7 +55,7 @@ schema:
         service_dir:
           type: string
           description: "Source directory for the service"
-          default: "ecs-ping-sns"
+          default: "ecs-static-website"
           minLength: 1
           maxLength: 100
         dockerfile:
