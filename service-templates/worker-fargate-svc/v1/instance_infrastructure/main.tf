@@ -103,11 +103,11 @@ resource "aws_ecs_service" "ecs_queue_processing_ecs_fargate_service" {
 
   network_configuration {
     subnets = var.service_instance.inputs.subnet_type == "private" ? [
-      var.environment.outputs.PrivateSubnet1,
-      var.environment.outputs.PrivateSubnet2
+      var.environment.outputs.PrivateSubnetOneId,
+      var.environment.outputs.PrivateSubnetTwoId
       ] : [
-      var.environment.outputs.PublicSubnet1,
-      var.environment.outputs.PublicSubnet2
+      var.environment.outputs.PublicSubnetOneId,
+      var.environment.outputs.PublicSubnetTwoId
     ]
     assign_public_ip = var.service_instance.inputs.subnet_type == "private" ? false : true
   }
