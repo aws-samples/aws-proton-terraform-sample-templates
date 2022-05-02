@@ -74,7 +74,7 @@ resource "aws_iam_role_policy" "scheduled-task-def-events-role-policy" {
       {
         Action   = "iam:PassRole"
         Effect   = "Allow",
-        Resource = var.environment.outputs.ServiceTaskDefExecutionRole
+        Resource = var.environment.outputs.ServiceTaskDefExecutionRoleArn
       },
       {
         Action   = "iam:PassRole"
