@@ -22,14 +22,14 @@ To test a template locally, you can create symbolic links to these files in the 
 
 ```
 cd <template>/vx/<infrastructure>/
-ln -s ../../dev-resources/proton.variables.tf .
-ln -s ../../dev-resources/proton.auto.tfvars.json .
+ln -s ../../dev-resources/proton.variables.tf dev.proton.auto.tfvars.json
+ln -s ../../dev-resources/proton.auto.tfvars.json dev.proton.auto.tfvars.json
 terraform init
 terraform plan
 ```
 
 Note that you will need to populate `proton.auto.tfvars.json` with the required values according to the template. For
-environments, this will typically be the `environment.name` and `environment.inputs` fields.
+environments, this will typically be the `environment.name` and `environment.inputs` fields, for example.
 
 ## Security
 
