@@ -10,7 +10,7 @@ output "ServiceTaskDefExecutionRoleArn" {
   value = aws_iam_role.service-task-def-execution-role.arn
 }
 
-output "SnsTopic" {
+output "SnsTopicArn" {
   value = aws_sns_topic.ping_topic.arn
 }
 
