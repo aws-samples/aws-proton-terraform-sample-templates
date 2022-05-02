@@ -38,7 +38,7 @@ resource "aws_iam_role_policy" "scheduled-task-def-task-role-policy" {
       {
         Action   = "sns:Publish"
         Effect   = "Allow"
-        Resource = var.environment.outputs.SnsTopic
+        Resource = var.environment.outputs.SnsTopicArn
       }
     ]
   })
