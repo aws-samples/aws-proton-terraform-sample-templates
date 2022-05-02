@@ -7,7 +7,7 @@ data "aws_partition" "current" {}
 data "aws_iam_policy_document" "ecs_task_execution_role_policy_document" {
   statement {
     actions   = ["sns:Publish"]
-    resources = [var.environment.outputs.SnsTopic]
+    resources = [var.environment.outputs.SnsTopicArn]
   }
 }
 
