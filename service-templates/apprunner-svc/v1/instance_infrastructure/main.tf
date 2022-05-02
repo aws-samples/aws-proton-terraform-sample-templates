@@ -24,7 +24,7 @@ resource "aws_iam_role_policy_attachment" "service_access_role_default_policy_at
   role       = aws_iam_role.service_access_role.name
 }
 resource "aws_apprunner_service" "service" {
-  count        = var.service_instance.inputs.image != 0 ? 1 : 0
+  count        = lookup(var.service_instance.inputs, "image", "") != "" ? 1 : 0
   service_name = var.service.name
 
   network_configuration {

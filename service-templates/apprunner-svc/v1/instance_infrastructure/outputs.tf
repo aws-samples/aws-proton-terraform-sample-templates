@@ -1,7 +1,7 @@
 output "AppRunnerServiceArn" {
-  value = aws_apprunner_service.service[0].arn
+  value = length(aws_apprunner_service.service) > 0 ? aws_apprunner_service.service[0].arn : "null"
 }
 
 output "AppRunnerServiceURL" {
-  value = "https://${aws_apprunner_service.service[0].service_url}"
+  value = length(aws_apprunner_service.service) > 0 ? "https://${aws_apprunner_service.service[0].service_url}" : "null"
 }
