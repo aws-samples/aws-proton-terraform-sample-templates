@@ -108,7 +108,7 @@ resource "aws_ecs_task_definition" "scheduled-task-definition" {
     environment : [
       {
         name : "SNS_TOPIC_ARN",
-        value : "{ \"ping\" : \"${var.environment.outputs.SnsTopic}\" }"
+        value : "{ \"ping\" : \"${var.environment.outputs.SnsTopicArn}\" }"
       },
       {
         name : "SNS_REGION",
