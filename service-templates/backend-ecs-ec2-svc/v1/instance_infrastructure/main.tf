@@ -21,7 +21,7 @@ resource "aws_iam_role_policy" "service-task-def-task-role-policy" {
       {
         Action   = "sns:Publish"
         Effect   = "Allow"
-        Resource = var.environment.outputs.SnsTopic
+        Resource = var.environment.outputs.SnsTopicArn
       }
     ]
   })
@@ -49,7 +49,7 @@ resource "aws_ecs_task_definition" "scheduled-task-definition" {
     environment : [
       {
         name : "SNS_TOPIC_ARN",
-        value : "{ \"ping\" : \"${var.environment.outputs.SnsTopic}\" }"
+        value : "{ \"ping\" : \"${var.environment.outputs.SnsTopicArn}\" }"
       },
       {
         name : "SNS_REGION",
