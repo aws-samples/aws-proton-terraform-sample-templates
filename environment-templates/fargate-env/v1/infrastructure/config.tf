@@ -14,7 +14,7 @@ provider "aws" {
   region = var.aws_region
   default_tags {
     tags = {
-      proton:environment = var.environment.name
+      "proton:environment" = var.environment.name
     }
   }
 }
