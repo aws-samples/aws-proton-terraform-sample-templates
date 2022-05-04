@@ -74,7 +74,7 @@ resource "aws_ecs_task_definition" "scheduled-task-definition" {
 
 resource "aws_ecs_service" "service" {
   name                               = "${var.service.name}_${var.service_instance.name}"
-  cluster                            = var.environment.outputs.Cluster
+  cluster                            = var.environment.outputs.ClusterName
   deployment_maximum_percent         = 200
   deployment_minimum_healthy_percent = 50
   desired_count                      = var.service_instance.inputs.desired_count
@@ -117,7 +117,7 @@ resource "aws_security_group_rule" "ecs_host_security_group_from_other_host_cont
 resource "aws_appautoscaling_target" "service_task_count_target" {
   max_capacity       = 10
   min_capacity       = 1
-  resource_id        = "service/${var.environment.outputs.Cluster}/${var.service.name}_${var.service_instance.name}"
+  resource_id        = "service/${var.environment.outputs.ClusterName}/${var.service.name}_${var.service_instance.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
   depends_on = [
