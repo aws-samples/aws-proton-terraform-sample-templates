@@ -2,6 +2,25 @@ locals {
   account_id = data.aws_caller_identity.current.account_id
   region     = data.aws_region.current.id
   partition  = data.aws_partition.current.id
+
+  component_outputs = can(var.service_instance.components.default) ? [
+    for k, v in var.service_instance.components.default.outputs :
+    { name : k, value : v }
+  ] : []
+
+  ecs_environment_variables = concat(local.component_outputs,
+    [
+      { name : "sns_topic_arn", value : "{ping:${var.environment.outputs.SnsTopicArn}" },
+      { name : "sns_region", value : var.environment.outputs.SnsRegion },
+      { name : "backend_url", value : var.service_instance.inputs.backendurl }
+    ]
+  )
+
+  component_policy_arns = can(var.service_instance.components.default) ? [
+    for k, v in var.service_instance.components.default.outputs :
+    v if length(regexall("^arn:[a-zA-Z-]+:iam::\\d{12}:policy/.+", v)) > 0
+  ] : []
+
 }
 
 variable "task_size_cpu" {

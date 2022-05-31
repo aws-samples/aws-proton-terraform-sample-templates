@@ -1,6 +1,5 @@
 resource "aws_security_group" "lb_sg" {
   count       = var.service_instance.inputs.loadbalancer_type == "application" ? 1 : 0
-  name        = "service_lb_security_group"
   description = "Automatically created Security Group for Application LB."
   vpc_id      = var.environment.outputs.VpcId
 
@@ -25,10 +24,11 @@ resource "aws_security_group_rule" "lb_sg_egress" {
 }
 
 resource "aws_lb" "service_lb" {
-  name               = "${var.service.name}-lb"
   load_balancer_type = var.service_instance.inputs.loadbalancer_type
-  security_groups    = var.service_instance.inputs.loadbalancer_type == "application" ? [aws_security_group.lb_sg[0].id] : null
-  subnets            = [var.environment.outputs.PublicSubnetOneId, var.environment.outputs.PublicSubnetTwoId]
+  security_groups = var.service_instance.inputs.loadbalancer_type == "application" ? [
+    aws_security_group.lb_sg[0].id
+  ] : null
+  subnets = [var.environment.outputs.PublicSubnetOneId, var.environment.outputs.PublicSubnetTwoId]
 
   enable_deletion_protection = false
 }
@@ -68,6 +68,16 @@ resource "aws_iam_role" "ecs_task_execution_role" {
       }
     ]
   })
+  permissions_boundary = aws_iam_policy.task_role_permission_boundary.arn
+  managed_policy_arns  = concat([aws_iam_policy.base_task_role_policy.arn], local.component_policy_arns)
+}
+
+resource "aws_iam_policy" "task_role_permission_boundary" {
+  policy = data.aws_iam_policy_document.task_role_permission_boundary_document.json
+}
+
+resource "aws_iam_policy" "base_task_role_policy" {
+  policy = data.aws_iam_policy_document.base_task_role_managed_policy_document.json
 }
 
 resource "aws_iam_role_policy_attachment" "publish_role_policy_attachment" {
@@ -105,24 +115,11 @@ resource "aws_ecs_task_definition" "service_task_definition" {
         "essential": true,
         "portMappings": [
           {
-              "containerPort": ${var.service_instance.inputs.port},
+            "containerPort": ${var.service_instance.inputs.port},
             "protocol": "tcp"
           }
         ],
-        "environment": [
-          {
-            "name": "sns_topic_arn",
-            "value": "{ping:${var.environment.outputs.SnsTopicArn}"
-          },
-          {
-            "name": "sns_region",
-            "value": "${var.environment.outputs.SnsRegion}"
-          },
-          {
-            "name": "backend_url",
-            "value": "${var.service_instance.inputs.backendurl}"
-          }
-        ]
+        "environment": ${jsonencode(local.ecs_environment_variables)}
       }
   ]
   TASK_DEFINITION
@@ -148,11 +145,15 @@ resource "aws_ecs_service" "service" {
     #    Assign a public IP address to the ENI
     assign_public_ip = var.service_instance.inputs.subnet_type == "private" ? false : true
     security_groups  = [aws_security_group.service_security_group.id]
-    subnets          = var.service_instance.inputs.subnet_type == "private" ? [var.environment.outputs.PrivateSubnetOneId, var.environment.outputs.PrivateSubnetTwoId] : [var.environment.outputs.PublicSubnetOneId, var.environment.outputs.PublicSubnetTwoId]
+    subnets = var.service_instance.inputs.subnet_type == "private" ? [
+      var.environment.outputs.PrivateSubnetOneId, var.environment.outputs.PrivateSubnetTwoId
+    ] : [var.environment.outputs.PublicSubnetOneId, var.environment.outputs.PublicSubnetTwoId]
   }
 
   task_definition = aws_ecs_task_definition.service_task_definition.arn
-  depends_on      = [aws_lb_target_group.service_lb_public_listener_target_group, aws_lb_listener.service_lb_public_listener]
+  depends_on = [
+    aws_lb_target_group.service_lb_public_listener_target_group, aws_lb_listener.service_lb_public_listener
+  ]
 }
 
 resource "aws_service_discovery_service" "service_cloud_map_service" {
@@ -175,7 +176,6 @@ resource "aws_service_discovery_service" "service_cloud_map_service" {
 }
 
 resource "aws_security_group" "service_security_group" {
-  name        = "service_security_group"
   description = "Automatically created Security Group for the Service"
   vpc_id      = var.environment.outputs.VpcId
 
