@@ -1,0 +1,5 @@
+infrastructure:
+  templates:
+    - file: component.tf
+      rendering_engine: hcl
+      template_language: terraform
