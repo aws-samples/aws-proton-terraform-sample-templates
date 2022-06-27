@@ -44,15 +44,19 @@ resource "aws_lb_listener" "service_lb_public_listener" {
 }
 
 resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
-  port     = var.service_instance.inputs.port
-  protocol = var.service_instance.inputs.loadbalancer_type == "application" ? "HTTP" : "TCP"
+  port        = var.service_instance.inputs.port
+  protocol    = var.service_instance.inputs.loadbalancer_type == "application" ? "HTTP" : "TCP"
+  target_type = "ip"
+  vpc_id      = var.environment.outputs.VpcId
 
   stickiness {
     enabled = false
     type    = var.service_instance.inputs.loadbalancer_type == "application" ? "lb_cookie" : "source_ip"
   }
-  target_type = "ip"
-  vpc_id      = var.environment.outputs.VpcId
+
+  health_check {
+    path = var.service_instance.health_check_path
+  }
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
