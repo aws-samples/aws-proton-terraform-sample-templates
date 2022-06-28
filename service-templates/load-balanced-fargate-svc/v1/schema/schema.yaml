@@ -15,6 +15,11 @@ schema:
           default: 80
           minimum: 0
           maximum: 65535
+        health_check_path:
+          title: Health Check Path
+          description: Destination for the health check request
+          type: string
+          default: /
         desired_count:
           type: number
           description: "The default number of Fargate tasks you want running"
