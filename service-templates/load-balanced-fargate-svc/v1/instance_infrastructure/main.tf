@@ -55,7 +55,7 @@ resource "aws_lb_target_group" "service_lb_public_listener_target_group" {
   }
 
   health_check {
-    path = var.service_instance.health_check_path
+    path = var.service_instance.inputs.health_check_path
   }
 }
 
