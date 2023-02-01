@@ -16,13 +16,13 @@ infrastructure:
 
           # get user-named proton input
           - export PROTON_ENV=$(cat proton-inputs.json | jq '.environment.name' -r)
-          - export AWS_REGION=$(cat proton-inputs.json | jq '.environment.inputs.aws_region' -r)
+          - export VPC_REGION=$(cat proton-inputs.json | jq '.environment.inputs.aws_region' -r)
           - export TF_STATE_BUCKET=$(cat proton-inputs.json | jq '.environment.inputs.tf_state_bucket' -r)
           - export TF_STATE_BUCKET_REGION=$(cat proton-inputs.json | jq '.environment.inputs.tf_state_bucket_region' -r)
 
           # provision, storing state in an s3 bucket using the proton environment.service.instance as the key
           - terraform init -backend-config="bucket=${TF_STATE_BUCKET}" -backend-config="key=${PROTON_ENV}.tfstate" -backend-config="region=${TF_STATE_BUCKET_REGION}"
-          - terraform apply -var-file=proton-inputs.json -var="aws_region=${AWS_REGION}" -auto-approve
+          - terraform apply -var-file=proton-inputs.json -var="aws_region=${VPC_REGION}" -auto-approve
 
           # pass terraform output to proton
           - chmod +x ./output.sh && ./output.sh
@@ -34,10 +34,10 @@ infrastructure:
 
           # get user-named proton input
           - export PROTON_ENV=$(cat proton-inputs.json | jq '.environment.name' -r)
-          - export AWS_REGION=$(cat proton-inputs.json | jq '.environment.inputs.aws_region' -r)
+          - export VPC_REGION=$(cat proton-inputs.json | jq '.environment.inputs.aws_region' -r)
           - export TF_STATE_BUCKET=$(cat proton-inputs.json | jq '.environment.inputs.tf_state_bucket' -r)
           - export TF_STATE_BUCKET_REGION=$(cat proton-inputs.json | jq '.environment.inputs.tf_state_bucket_region' -r)
 
           # destroy environment
           - terraform init -backend-config="bucket=${TF_STATE_BUCKET}" -backend-config="key=${PROTON_ENV}.tfstate" -backend-config="aws_region=${TF_STATE_BUCKET_REGION}"
-          - terraform destroy -var-file=proton-inputs.json -var="aws_region=${AWS_REGION}" -auto-approve
+          - terraform destroy -var-file=proton-inputs.json -var="aws_region=${VPC_REGION}" -auto-approve
