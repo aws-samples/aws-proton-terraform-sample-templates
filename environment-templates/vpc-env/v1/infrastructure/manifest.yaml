@@ -1,5 +1,43 @@
 infrastructure:
   templates:
-    - file: "*"
-      rendering_engine: hcl
-      template_language: terraform
+    - rendering_engine: codebuild
+      settings:
+        image: aws/codebuild/standard:6.0
+        runtimes:
+          golang: 1.18
+        env:
+          variables:
+            TF_VERSION: 1.3.4
+
+        provision:
+          # install terraform cli
+          - echo "Installing Terraform CLI ${TF_VERSION}"
+          - chmod +x ./install-terraform.sh && ./install-terraform.sh ${TF_VERSION}
+
+          # get user-named proton input
+          - export PROTON_ENV=$(cat proton-inputs.json | jq '.environment.name' -r)
+          - export VPC_REGION=$(cat proton-inputs.json | jq '.environment.inputs.aws_region' -r)
+          - export TF_STATE_BUCKET=$(cat proton-inputs.json | jq '.environment.inputs.tf_state_bucket' -r)
+          - export TF_STATE_BUCKET_REGION=$(cat proton-inputs.json | jq '.environment.inputs.tf_state_bucket_region' -r)
+
+          # provision, storing state in an s3 bucket using the proton environment.service.instance as the key
+          - terraform init -backend-config="bucket=${TF_STATE_BUCKET}" -backend-config="key=${PROTON_ENV}.tfstate" -backend-config="region=${TF_STATE_BUCKET_REGION}"
+          - terraform apply -var-file=proton-inputs.json -var="aws_region=${VPC_REGION}" -auto-approve
+
+          # pass terraform output to proton
+          - chmod +x ./output.sh && ./output.sh
+
+        deprovision:
+          # install terraform cli
+          - echo "Installing Terraform CLI ${TF_VERSION}"
+          - chmod +x ./install-terraform.sh && ./install-terraform.sh ${TF_VERSION}
+
+          # get user-named proton input
+          - export PROTON_ENV=$(cat proton-inputs.json | jq '.environment.name' -r)
+          - export VPC_REGION=$(cat proton-inputs.json | jq '.environment.inputs.aws_region' -r)
+          - export TF_STATE_BUCKET=$(cat proton-inputs.json | jq '.environment.inputs.tf_state_bucket' -r)
+          - export TF_STATE_BUCKET_REGION=$(cat proton-inputs.json | jq '.environment.inputs.tf_state_bucket_region' -r)
+
+          # destroy environment
+          - terraform init -backend-config="bucket=${TF_STATE_BUCKET}" -backend-config="key=${PROTON_ENV}.tfstate" -backend-config="aws_region=${TF_STATE_BUCKET_REGION}"
+          - terraform destroy -var-file=proton-inputs.json -var="aws_region=${VPC_REGION}" -auto-approve
