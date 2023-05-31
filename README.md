@@ -34,7 +34,7 @@ To test a template locally, you can create symbolic links to these files in the 
 
 ```
 cd <template>/vx/<infrastructure>/
-ln -s ../../dev-resources/proton.variables.tf dev.proton.auto.tfvars.json
+ln -s ../../dev-resources/proton.variables.tf dev.proton.variables.tf
 ln -s ../../dev-resources/proton.auto.tfvars.json dev.proton.auto.tfvars.json
 terraform init
 terraform plan
