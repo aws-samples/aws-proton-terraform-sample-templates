@@ -52,7 +52,7 @@ resource "aws_codebuild_project" "build_project" {
                       "runtime-versions":
                       ${tomap({
     "ruby2.7"       = jsonencode({ "ruby" = "2.7" })
-    "nodejs12.x"    = jsonencode({ "nodejs" = "12.x" })
+    "nodejs16.x"    = jsonencode({ "nodejs" = "12.x" })
     "python3.8"     = jsonencode({ "python" = "3.8" })
     "java11"        = jsonencode({ "java" = "openjdk11.x" })
     "dotnetcore3.1" = jsonencode({ "dotnet" : "3.1" })
